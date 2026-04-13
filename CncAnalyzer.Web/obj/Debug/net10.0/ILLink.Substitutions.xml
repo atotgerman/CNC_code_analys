@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<linker>
+  <assembly fullname="CncAnalyzer.Web">
+    <resource name="FSharpSignatureData.CncAnalyzer.Web" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedData.CncAnalyzer.Web" action="remove"></resource>
+    <resource name="FSharpSignatureDataB.CncAnalyzer.Web" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedDataB.CncAnalyzer.Web" action="remove"></resource>
+    <resource name="FSharpOptimizationData.CncAnalyzer.Web" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedData.CncAnalyzer.Web" action="remove"></resource>
+    <resource name="FSharpOptimizationDataB.CncAnalyzer.Web" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedDataB.CncAnalyzer.Web" action="remove"></resource>
+    <resource name="FSharpOptimizationInfo.CncAnalyzer.Web" action="remove"></resource>
+    <resource name="FSharpSignatureInfo.CncAnalyzer.Web" action="remove"></resource>
+  </assembly>
+</linker>

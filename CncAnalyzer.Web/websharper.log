@@ -1,0 +1,3 @@
+2026-04-13 19:49:20.0268|DEBUG|Program|location of wsfscservice is: C:\Users\atoth\.nuget\packages\websharper.fsharp\10.1.0.667\tools\net10.0\win-x64 (server side)
+2026-04-13 19:49:20.0351|DEBUG|Program|pipename is: ce9bdc14ab84e542a2916b93eae082e6 (server side)
+2026-04-13 19:49:20.0351|DEBUG|Program|Compiling C:\Users\atoth\Downloads\CNC_analysis\CNC_code_analys\CncAnalyzer.Web\CncAnalyzer.Web.fsproj
