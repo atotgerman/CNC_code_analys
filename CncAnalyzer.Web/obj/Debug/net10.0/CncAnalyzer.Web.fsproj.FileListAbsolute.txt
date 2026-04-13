@@ -61,3 +61,4 @@ C:\Users\atoth\Downloads\CNC_analysis\CNC_code_analys\CncAnalyzer.Web\obj\Debug\
 C:\Users\atoth\Downloads\CNC_analysis\CNC_code_analys\CncAnalyzer.Web\obj\Debug\net10.0\compressed\sqfanih7rs-{0}-21dd52n2j9-21dd52n2j9.gz
 C:\Users\atoth\Downloads\CNC_analysis\CNC_code_analys\CncAnalyzer.Web\obj\Debug\net10.0\compressed\ql22or9d7e-{0}-lh5sdewnc6-lh5sdewnc6.gz
 C:\Users\atoth\Downloads\CNC_analysis\CNC_code_analys\CncAnalyzer.Web\obj\Debug\net10.0\compressed\shzgx57t1g-{0}-4odrh4ewiq-4odrh4ewiq.gz
+C:\Users\atoth\Downloads\CNC_analysis\CNC_code_analys\CncAnalyzer.Web\obj\Debug\net10.0\CncAnalyzer.Web.sourcelink.json

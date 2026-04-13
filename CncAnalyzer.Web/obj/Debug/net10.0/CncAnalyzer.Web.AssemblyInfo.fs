@@ -10,7 +10,7 @@ open System.Reflection
 [<assembly: System.Reflection.AssemblyCompanyAttribute("CncAnalyzer.Web")>]
 [<assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")>]
 [<assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")>]
-[<assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")>]
+[<assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7e4d4a348fde2925c21c72af446d7076374a6ea7")>]
 [<assembly: System.Reflection.AssemblyProductAttribute("CncAnalyzer.Web")>]
 [<assembly: System.Reflection.AssemblyTitleAttribute("CncAnalyzer.Web")>]
 [<assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")>]
