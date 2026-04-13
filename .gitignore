@@ -42,3 +42,15 @@ yarn-error.log*
 # =========================
 wwwroot/dist/
 wwwroot/bundle/
+
+# .NET build artifacts
+*.dll
+*.exe
+*.pdb
+
+# WebSharper / ASP.NET generated
+staticwebassets*
+*.cache.json
+
+# Logs
+websharper.log
