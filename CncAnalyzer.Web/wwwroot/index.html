@@ -5,24 +5,53 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" type="text/css" href="Scripts/CncAnalyzer.Web.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Don't show the not-yet-loaded templates */
         [ws-template], [ws-children-template] { display: none; }
     </style>
     <script type="text/javascript" src="Scripts/CncAnalyzer.Web.head.js"></script>
 </head>
-<body>
-    <h1>My list of unique people</h1>
-    <div id="main" ws-children-template="Main">
-        <ul ws-hole="ListContainer">
-            <li ws-template="ListItem">${Name}</li>
-        </ul>
-        <div>
-            <input ws-var="Name" placeholder="Name" />
-            <button ws-onclick="Add">Add</button>
-            <div>You are about to add: ${Name}</div>
+<body class="bg-slate-900 text-white">
+
+    <div class="min-h-screen flex flex-col items-center justify-center">
+
+        <h1 class="text-4xl font-bold mb-8">
+            CNC Analyzer
+        </h1>
+
+        <div class="bg-slate-800 p-6 rounded-xl shadow-xl w-[500px]">
+
+            <!-- WebSharper template -->
+            <div id="main" ws-children-template="Main">
+
+                <ul class="mb-4 space-y-2" ws-hole="ListContainer">
+                    <li class="bg-slate-700 p-2 rounded" ws-template="ListItem">
+                        ${Name}
+                    </li>
+                </ul>
+
+                <div class="flex gap-2">
+                    <input ws-var="Name"
+                           placeholder="Name"
+                           class="flex-1 p-2 rounded bg-slate-700 text-white border border-slate-600" />
+
+                    <button ws-onclick="Add"
+                            class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded">
+                        Add
+                    </button>
+                </div>
+
+                <div class="mt-4 text-sm text-slate-400">
+                    You are about to add: ${Name}
+                </div>
+
+            </div>
+
         </div>
+
     </div>
+
     <script type="module" src="Scripts/CncAnalyzer.Web.min.js"></script>
 </body>
 </html>
