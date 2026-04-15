@@ -1,27 +1,78 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>Test</title>
+    <title>CNC Analyzer</title>
     <meta charset="utf-8">
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        [ws-template], [ws-children-template] { display: none; }
+    </style>
+
+    <script type="text/javascript" src="Scripts/CncAnalyzer.Web.head.js"></script>
 </head>
-<body>
 
-<div id="main" ws-children-template="Main">
+<body class="bg-slate-900 text-white">
 
-    <button ws-onclick="GoHome">Home</button>
-    <button ws-onclick="GoAnalyzer">Analyzer</button>
-    <button ws-onclick="GoUpload">Upload</button>
+    <!-- 🔥 FONTOS: MINDEN A TEMPLATE-BEN -->
+    <div id="main" ws-children-template="Main">
 
-    <div id="uploadSection" style="margin-top: 10px;">
-        <input type="file" id="fileInput">
+        <div class="min-h-screen flex flex-col">
+
+            <!-- NAVBAR -->
+            <div class="bg-slate-800 shadow-lg px-6 py-4 flex items-center justify-between">
+
+                <h1 class="text-xl font-bold tracking-wide">
+                    CNC Analyzer
+                </h1>
+
+                <div class="flex gap-3">
+                    <button class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded"
+                            ws-onclick="GoHome">
+                        Home
+                    </button>
+
+                    <button class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded"
+                            ws-onclick="GoAnalyzer">
+                        Analyzer
+                    </button>
+
+                    <button class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded"
+                            ws-onclick="GoUpload">
+                        Upload
+                    </button>
+                </div>
+            </div>
+
+            <!-- CONTENT -->
+            <div class="flex-1 flex justify-center items-start p-8">
+
+                <div class="w-full max-w-3xl">
+
+                    <!-- 🔥 REJTETT FILE INPUT -->
+                    <input type="file" id="fileInput" style="display:none;">
+
+                    <!-- PANEL -->
+                    <div class="bg-slate-800 p-6 rounded-xl shadow-xl">
+
+                        <div ws-hole="HomeView"></div>
+
+                        <div ws-hole="AnalyzerView"></div>
+
+                        <div ws-hole="UploadView"></div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
-    <div ws-hole="HomeView"></div>
-    <div ws-hole="AnalyzerView"></div>
-    <div ws-hole="UploadView"></div>
-
-</div>
-
-<script type="module" src="Scripts/CncAnalyzer.Web.min.js"></script>
+    <script type="module" src="Scripts/CncAnalyzer.Web.min.js"></script>
 </body>
 </html>

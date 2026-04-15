@@ -60,6 +60,9 @@ module Client =
                 ]
             else Doc.Empty
         )
+    let openFileDialog () =
+        let input = JS.Document.GetElementById("fileInput")
+        input?click()
 
     [<SPAEntryPoint>]
     let Main () =
@@ -69,7 +72,10 @@ module Client =
             // Menü
             .GoHome(fun _ -> currentPage.Value <- Home)
             .GoAnalyzer(fun _ -> currentPage.Value <- Analyzer)
-            .GoUpload(fun _ -> currentPage.Value <- Upload)
+            .GoUpload(fun _ -> 
+                openFileDialog()
+                currentPage.Value <- Upload
+            )
 
             // 🔥 EZ A KULCS
             .HomeView(homeDoc)

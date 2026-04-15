@@ -13,6 +13,7 @@ function Main(){
     currentPage().Set(Analyzer);
   })),t_1);
   const this_1=(t_2.h.push(EventQ2(t_2.k, "goupload", () => t_2.i, () => {
+    openFileDialog();
     currentPage().Set(Upload);
   })),t_2);
   const this_2=(this_1.h.push(new Elt("homeview", homeDoc())),this_1);
@@ -37,6 +38,9 @@ function homeDoc(){
 }
 function currentPage(){
   return _c.currentPage;
+}
+function openFileDialog(){
+  return globalThis.document.getElementById("fileInput").click();
 }
 function initFileUpload(){
   const input=globalThis.document.getElementById("fileInput");
@@ -412,6 +416,12 @@ function NewFromSeq(fields){
     const _1=e;
     if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
   }
+  return r;
+}
+function GetFieldValues(o){
+  let r=[];
+  let k;
+  for(var k_1 in o)r.push(o[k_1]);
   return r;
 }
 function Some(Value_1){
@@ -1065,12 +1075,6 @@ class Doc extends Object_1 {
     this.docNode=docNode;
     this.updates=updates;
   }
-}
-function GetFieldValues(o){
-  let r=[];
-  let k;
-  for(var k_1 in o)r.push(o[k_1]);
-  return r;
 }
 class Dictionary extends Object_1 {
   equals;
