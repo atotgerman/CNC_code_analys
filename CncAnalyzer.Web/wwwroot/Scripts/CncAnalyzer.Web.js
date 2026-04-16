@@ -50,11 +50,29 @@ function initFileUpload(){
       const reader=new globalThis.FileReader();
       reader.onload=() => {
         const content=reader.result;
+        fileContent().Set(content);
+        parseGCode(content);
         return globalThis.console.log(content);
       };
       reader.readAsText(file);
     }
   };
+}
+function fileContent(){
+  return _c.fileContent;
+}
+function parseGCode(text){
+  return map_1(parseLine, filter((l) => l!="", map_1((l) => Trim(l), SplitChars(text, ["\n"], 0))));
+}
+function parseLine(line){
+  const parts=SplitChars(line, [" "], 1);
+  const tryGet=(prefix) => {
+    const o_1=tryFind((p) => StartsWith(p, prefix), parts);
+    return o_1==null?null:Some(Number(o_1.$0.substring(1)));
+  };
+  const o=tryFind((p) => StartsWith(p, "G"), parts);
+  let _1=o==null?"":o.$0;
+  return New(_1, tryGet("X"), tryGet("Y"));
 }
 function FailWith(msg){
   throw new Error(msg);
@@ -371,7 +389,9 @@ let _c=Lazy((_i) => class $StartupCode_Client {
   static analyzerDoc;
   static homeDoc;
   static currentPage;
+  static fileContent;
   static {
+    this.fileContent=_c_1.Create_1("");
     this.currentPage=_c_1.Create_1(Home);
     this.homeDoc=Doc.BindView((p) => p.$===0?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Home")])]):Doc.Empty, currentPage().View);
     this.analyzerDoc=Doc.BindView((p) => p.$===1?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Analyzer")])]):Doc.Empty, currentPage().View);
@@ -1470,6 +1490,26 @@ function choose(f, arr){
   }
   return q;
 }
+function map_1(f, arr){
+  const r=new Array(arr.length);
+  for(let i=0, _1=arr.length-1;i<=_1;i++)r[i]=f(arr[i]);
+  return r;
+}
+function filter(f, arr){
+  const r=[];
+  for(let i=0, _1=arr.length-1;i<=_1;i++)if(f(arr[i]))r.push(arr[i]);
+  return r;
+}
+function tryFind(f, arr){
+  let res=null;
+  let i=0;
+  while(i<arr.length&&res==null)
+    {
+      f(arr[i])?res=Some(arr[i]):void 0;
+      i=i+1;
+    }
+  return res;
+}
 function tryFindIndex(f, arr){
   let res=null;
   let i=0;
@@ -1511,16 +1551,6 @@ function foldBack(f, arr, zero){
   const len=arr.length;
   for(let i=1, _1=len;i<=_1;i++)acc=f(arr[len-i], acc);
   return acc;
-}
-function map_1(f, arr){
-  const r=new Array(arr.length);
-  for(let i=0, _1=arr.length-1;i<=_1;i++)r[i]=f(arr[i]);
-  return r;
-}
-function filter(f, arr){
-  const r=[];
-  for(let i=0, _1=arr.length-1;i<=_1;i++)if(f(arr[i]))r.push(arr[i]);
-  return r;
 }
 function ofSeq(xs){
   if(xs instanceof Array)return xs.slice();
@@ -2214,7 +2244,7 @@ function InsertDoc(parent, doc, pos){
     }
 }
 function CreateRunState(parent, doc){
-  return New_1(get_Empty_1(), CreateElemNode(parent, EmptyAttr(), doc));
+  return New_2(get_Empty_1(), CreateElemNode(parent, EmptyAttr(), doc));
 }
 function PerformAnimatedUpdate(childrenOnly, st, doc){
   return get_UseAnimations()?Delay(() => {
@@ -2405,6 +2435,40 @@ function DoSyncElement(el){
   const m=GetOptional(el.Delimiters);
   let _2=m!=null&&m.$==1?m.$0[1]:null;
   ins(_1, _2);
+}
+function SplitChars(s, sep, opts){
+  return Split(s, new RegExp("["+RegexEscape(sep.join(""))+"]"), opts);
+}
+function Trim(s){
+  return s.replace(new RegExp("^\\s+"), "").replace(new RegExp("\\s+$"), "");
+}
+function Split(s, pat, opts){
+  return opts===1?filter((x) => x!=="", SplitWith(s, pat)):SplitWith(s, pat);
+}
+function RegexEscape(s){
+  return s.replace(new RegExp("[-\\/\\\\^$*+?.()|[\\]{}]", "g"), "\\$&");
+}
+function StartsWith(t, s){
+  return t.substring(0, s.length)==s;
+}
+function concat_2(separator, strings){
+  return ofSeq(strings).join(separator);
+}
+function SplitWith(str, pat){
+  return str.split(pat);
+}
+function forall_2(f, s){
+  return forall(f, protect(s));
+}
+function protect(s){
+  return s==null?"":s;
+}
+function New(Cmd, X, Y){
+  return{
+    Cmd:Cmd, 
+    X:X, 
+    Y:Y
+  };
 }
 class DocElemNode {
   Attr;
@@ -2803,7 +2867,7 @@ function StartProcessor(procAsync){
     else Equals(m, 1)?st[0]=2:void 0;
   };
 }
-function New(DynElem, DynFlags, DynNodes, OnAfterRender_1){
+function New_1(DynElem, DynFlags, DynNodes, OnAfterRender_1){
   const _1={
     DynElem:DynElem, 
     DynFlags:DynFlags, 
@@ -2883,7 +2947,7 @@ function Insert(elem, tree){
   }
   loop(tree);
   const arr=nodes.slice(0);
-  let _1=New(elem, Flags(tree), arr, oar.length===0?null:Some((el) => {
+  let _1=New_1(elem, Flags(tree), arr, oar.length===0?null:Some((el) => {
     iter((f) => {
       f(el);
     }, oar);
@@ -2894,7 +2958,7 @@ function Updates(dyn){
   return MapTreeReduce((x) => x.NChanged, Const(), Map2Unit_1, dyn.DynNodes);
 }
 function Empty(e){
-  return New(e, 0, [], null);
+  return New_1(e, 0, [], null);
 }
 function Flags(a){
   return a!==null&&a.hasOwnProperty("flags")?a.flags:0;
@@ -3067,30 +3131,6 @@ class FSharpList {
   $0;
   $1;
 }
-function concat_2(separator, strings){
-  return ofSeq(strings).join(separator);
-}
-function SplitChars(s, sep, opts){
-  return Split(s, new RegExp("["+RegexEscape(sep.join(""))+"]"), opts);
-}
-function StartsWith(t, s){
-  return t.substring(0, s.length)==s;
-}
-function Split(s, pat, opts){
-  return opts===1?filter((x) => x!=="", SplitWith(s, pat)):SplitWith(s, pat);
-}
-function RegexEscape(s){
-  return s.replace(new RegExp("[-\\/\\\\^$*+?.()|[\\]{}]", "g"), "\\$&");
-}
-function SplitWith(str, pat){
-  return str.split(pat);
-}
-function forall_2(f, s){
-  return forall(f, protect(s));
-}
-function protect(s){
-  return s==null?"":s;
-}
 function TreeReduce(defaultValue, reduction, array){
   const l=length(array);
   function loop(off){
@@ -3179,7 +3219,7 @@ class ValueCollection extends Object_1 {
     this.d=d;
   }
 }
-function New_1(PreviousNodes, Top){
+function New_2(PreviousNodes, Top){
   return{PreviousNodes:PreviousNodes, Top:Top};
 }
 function get_Empty_1(){
@@ -3257,7 +3297,7 @@ function Delay(mk){
 }
 function Bind_1(r, f){
   return checkCancel((c) => {
-    r(New_2((a) => {
+    r(New_3((a) => {
       if(a.$==0){
         const x=a.$0;
         scheduler().Fork(() => {
@@ -3282,7 +3322,7 @@ function Start(c, ctOpt){
   const d=(defCTS())[0];
   const ct=ctOpt==null?d:ctOpt.$0;
   scheduler().Fork(() => {
-    if(!ct.c)c(New_2((a) => {
+    if(!ct.c)c(New_3((a) => {
       if(a.$==1)UncaughtAsyncError(a.$0);
     }, ct));
   });
@@ -3703,7 +3743,7 @@ class Easing extends Object_1 {
     this.transformTime=transformTime;
   }
 }
-function New_2(k, ct){
+function New_3(k, ct){
   return{k:k, ct:ct};
 }
 function No(Item){
@@ -3725,7 +3765,7 @@ let _c_9=Lazy((_i) => class $StartupCode_Concurrency {
   static scheduler;
   static noneCT;
   static {
-    this.noneCT=New_3(false, []);
+    this.noneCT=New_4(false, []);
     this.scheduler=new Scheduler();
     this.defCTS=[new CancellationTokenSource()];
     this.Zero=Return();
@@ -3734,7 +3774,7 @@ let _c_9=Lazy((_i) => class $StartupCode_Concurrency {
     };
   }
 });
-function New_3(IsCancellationRequested, Registrations){
+function New_4(IsCancellationRequested, Registrations){
   return{c:IsCancellationRequested, r:Registrations};
 }
 function Filter_1(ok, set_1){
@@ -4010,7 +4050,7 @@ class OperationCanceledException extends Error {
   }
 }
 function Create(f){
-  return New_4(false, f, forceLazy);
+  return New_5(false, f, forceLazy);
 }
 function forceLazy(){
   const v=this.v();
@@ -4031,7 +4071,7 @@ let _c_10=Lazy((_i) => class $StartupCode_AppendList {
     this.Empty={$:0};
   }
 });
-function New_4(created, evalOrVal, force){
+function New_5(created, evalOrVal, force){
   return{
     c:created, 
     v:evalOrVal, 
