@@ -61,19 +61,6 @@ function initFileUpload(){
 function fileContent(){
   return _c.fileContent;
 }
-function parseGCode(text){
-  return map_1(parseLine, filter((l) => l!="", map_1((l) => Trim(l), SplitChars(text, ["\n"], 0))));
-}
-function parseLine(line){
-  const parts=SplitChars(line, [" "], 1);
-  const tryGet=(prefix) => {
-    const o_1=tryFind((p) => StartsWith(p, prefix), parts);
-    return o_1==null?null:Some(Number(o_1.$0.substring(1)));
-  };
-  const o=tryFind((p) => StartsWith(p, "G"), parts);
-  let _1=o==null?"":o.$0;
-  return New(_1, tryGet("X"), tryGet("Y"));
-}
 function FailWith(msg){
   throw new Error(msg);
 }
@@ -1095,6 +1082,19 @@ class Doc extends Object_1 {
     this.docNode=docNode;
     this.updates=updates;
   }
+}
+function parseGCode(text){
+  return map_1(parseLine, filter((l) => l!="", map_1((l) => Trim(l), SplitChars(text, ["\n"], 0))));
+}
+function parseLine(line){
+  const parts=SplitChars(line, [" "], 1);
+  const tryGet=(prefix) => {
+    const o_1=tryFind((p) => StartsWith(p, prefix), parts);
+    return o_1==null?null:Some(Number(o_1.$0.substring(1)));
+  };
+  const o=tryFind((p) => StartsWith(p, "G"), parts);
+  let _1=o==null?"":o.$0;
+  return New(_1, tryGet("X"), tryGet("Y"));
 }
 class Dictionary extends Object_1 {
   equals;
