@@ -90,15 +90,29 @@ function drawCompass(canvas, dirs){
   canvas.width=400;
   canvas.height=400;
   ctx.clearRect(0, 0, 400, 400);
-  ctx.strokeStyle="red";
-  ctx.lineWidth=2;
   const centerX=200;
   const centerY=200;
-  const scale=100;
+  const radius=150;
+  ctx.strokeStyle="white";
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, 2*3.141592653589793);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(centerX-radius, centerY);
+  ctx.lineTo(centerX+radius, centerY);
+  ctx.moveTo(centerX, centerY-radius);
+  ctx.lineTo(centerX, centerY+radius);
+  ctx.stroke();
+  const maxLen=max_1(map_1((d_1) => d_1.Length, dirs));
+  const maxLog=Math.log(1+maxLen);
+  ctx.strokeStyle="red";
+  ctx.lineWidth=2;
   for(let i=0, _1=dirs.length-1;i<=_1;i++){
     const d=get(dirs, i);
-    const x=centerX+Math.cos(d.Angle)*d.Length*scale;
-    const y=centerY-Math.sin(d.Angle)*d.Length*scale;
+    const r=Math.log(1+d.Length)/maxLog*radius;
+    const x=centerX+Math.cos(d.Angle)*r;
+    const y=centerY-Math.sin(d.Angle)*r;
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(x, y);
@@ -111,8 +125,8 @@ function FailWith(msg){
 function KeyValue(kvp){
   return[kvp.K, kvp.V];
 }
-function range(min, max_1){
-  const count=1+max_1-min;
+function range(min, max_2){
+  const count=1+max_2-min;
   return count<=0?[]:init(count, (x) => x+min);
 }
 class Object_1 {
@@ -290,40 +304,6 @@ function arrayEquals(a, b){
 function dateEquals(a, b){
   return a.getTime()===b.getTime();
 }
-function Hash(o){
-  const m=typeof o;
-  return m=="function"?0:m=="boolean"?o?1:0:m=="number"?o:m=="string"?hashString(o):m=="object"?o==null?0:o instanceof Array?hashArray(o):hashObject(o):m=="bigint"?hashString(String(o)):m=="symbol"?hashString(o.description):0;
-}
-function hashString(s){
-  let hash;
-  if(s===null)return 0;
-  else {
-    hash=5381;
-    for(let i=0, _1=s.length-1;i<=_1;i++)hash=hashMix(hash, s[i].charCodeAt());
-    return hash;
-  }
-}
-function hashArray(o){
-  let h=-34948909;
-  for(let i=0, _1=length(o)-1;i<=_1;i++)h=hashMix(h, Hash(get(o, i)));
-  return h;
-}
-function hashObject(o){
-  if("GetHashCode"in o)return o.GetHashCode();
-  else {
-    const ____=hashMix;
-    const h=[0];
-    let k;
-    for(var k_1 in o)if(((key) => {
-      h[0]=____(____(h[0], hashString(key)), Hash(o[key]));
-      return false;
-    })(k_1))break;
-    return h[0];
-  }
-}
-function hashMix(x, y){
-  return(x<<5)+x+y;
-}
 function Compare(a, b){
   if(a===b)return 0;
   else {
@@ -360,6 +340,10 @@ function Compare(a, b){
     }
   }
 }
+function Hash(o){
+  const m=typeof o;
+  return m=="function"?0:m=="boolean"?o?1:0:m=="number"?o:m=="string"?hashString(o):m=="object"?o==null?0:o instanceof Array?hashArray(o):hashObject(o):m=="bigint"?hashString(String(o)):m=="symbol"?hashString(o.description):0;
+}
 function compareArrays(a, b){
   let cmp;
   let i;
@@ -378,6 +362,36 @@ function compareArrays(a, b){
 }
 function compareDates(a, b){
   return Compare(a.getTime(), b.getTime());
+}
+function hashString(s){
+  let hash;
+  if(s===null)return 0;
+  else {
+    hash=5381;
+    for(let i=0, _1=s.length-1;i<=_1;i++)hash=hashMix(hash, s[i].charCodeAt());
+    return hash;
+  }
+}
+function hashArray(o){
+  let h=-34948909;
+  for(let i=0, _1=length(o)-1;i<=_1;i++)h=hashMix(h, Hash(get(o, i)));
+  return h;
+}
+function hashObject(o){
+  if("GetHashCode"in o)return o.GetHashCode();
+  else {
+    const ____=hashMix;
+    const h=[0];
+    let k;
+    for(var k_1 in o)if(((key) => {
+      h[0]=____(____(h[0], hashString(key)), Hash(o[key]));
+      return false;
+    })(k_1))break;
+    return h[0];
+  }
+}
+function hashMix(x, y){
+  return(x<<5)+x+y;
 }
 function main(h){
   let n=Some("main");
@@ -1632,6 +1646,18 @@ function filter(f, arr){
 }
 function skip(i, ar){
   return i<0?nonNegative():i>ar.length?insufficient():ar.slice(i);
+}
+function max_1(arr){
+  nonEmpty(arr);
+  let m=arr[0];
+  for(let i=1, _1=arr.length-1;i<=_1;i++){
+    const x=arr[i];
+    if(Compare(x, m)===1)m=x;
+  }
+  return m;
+}
+function nonEmpty(arr){
+  if(arr.length===0)FailWith("The input array was empty.");
 }
 function tryFindIndex(f, arr){
   let res=null;
@@ -4165,9 +4191,9 @@ function TryParse_1(s){
   const d=Date.parse(s);
   return isNaN(d)?null:Some(d);
 }
-function TryParse_2(s, min, max_1, r){
+function TryParse_2(s, min, max_2, r){
   const x=+s;
-  const ok=x===x-x%1&&x>=min&&x<=max_1;
+  const ok=x===x-x%1&&x>=min&&x<=max_2;
   if(ok)r.set(x);
   return ok;
 }

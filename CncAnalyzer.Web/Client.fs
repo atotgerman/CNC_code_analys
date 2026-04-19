@@ -24,6 +24,12 @@ module Client =
         Length: float
     }
 
+    type Point = {
+        X: float
+        Y: float
+    }
+
+
     let directionsVar : Var<Direction[]> = Var.Create [||]
     let drawCompass (canvas: HTMLCanvasElement) (dirs: Direction[]) =
         let ctx = canvas.GetContext("2d")
@@ -33,16 +39,44 @@ module Client =
 
         ctx.ClearRect(0., 0., 400., 400.)
 
+        let centerX = 200.0
+        let centerY = 200.0
+        let radius = 150.0
+
+    // 🔵 Kör (kompasz keret)
+        ctx.StrokeStyle <- "white"
+        ctx.LineWidth <- 1.0
+        ctx.BeginPath()
+        ctx.Arc(centerX, centerY, radius, 0., 2.0 * System.Math.PI)
+        ctx.Stroke()
+
+    // 🔵 Tengelyek
+        ctx.BeginPath()
+        ctx.MoveTo(centerX - radius, centerY)
+        ctx.LineTo(centerX + radius, centerY)
+        ctx.MoveTo(centerX, centerY - radius)
+        ctx.LineTo(centerX, centerY + radius)
+        ctx.Stroke()
+
+    // 🔴 Max hossz (normalizáláshoz)
+        let maxLen =
+            dirs
+            |> Array.map (fun d -> d.Length)
+            |> Array.max
+        let maxLog = System.Math.Log(1.0 + maxLen)
+
         ctx.StrokeStyle <- "red"
         ctx.LineWidth <- 2.0
 
-        let centerX = 200.0
-        let centerY = 200.0
-        let scale = 100.0
-
+    // 🔴 Irányok rajzolása (normalizált)
         for d in dirs do
-            let x = centerX + cos(d.Angle) * d.Length * scale
-            let y = centerY - sin(d.Angle) * d.Length * scale
+            let norm =
+                let l = System.Math.Log(1.0 + d.Length)
+                l / maxLog
+            let r = norm * radius
+
+            let x = centerX + cos(d.Angle) * r
+            let y = centerY - sin(d.Angle) * r
 
             ctx.BeginPath()
             ctx.MoveTo(centerX, centerY)
