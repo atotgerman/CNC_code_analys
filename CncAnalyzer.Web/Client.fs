@@ -11,7 +11,7 @@ open WebSharper.JavaScript.Dom
 
 [<JavaScript>]
 module Client =
-
+    let zoomVar = Var.Create 1.0
     type IndexTemplate = Template<"wwwroot/index.html", ClientLoad.FromDocument>
     let fileContent = Var.Create ""
     type Page =
@@ -29,11 +29,12 @@ module Client =
         Y: float
     }
 
-
+    let offsetVar = Var.Create (0.0, 0.0)
     let directionsVar : Var<Direction[]> = Var.Create [||]
     let drawCompass (canvas: HTMLCanvasElement) (dirs: Direction[]) =
         let ctx = canvas.GetContext("2d")
-
+        let zoom = zoomVar.Value
+        let (offX, offY) = offsetVar.Value
         canvas.Width <- 400
         canvas.Height <- 400
 
@@ -43,20 +44,66 @@ module Client =
         let centerY = 200.0
         let radius = 150.0
 
+        let transform (x: float) (y: float) =
+            let tx = centerX + (x - centerX) * zoom + offX
+            let ty = centerY + (y - centerY) * zoom + offY
+            tx, ty
+        let cx, cy = transform centerX centerY
     // 🔵 Kör (kompasz keret)
         ctx.StrokeStyle <- "white"
         ctx.LineWidth <- 1.0
         ctx.BeginPath()
-        ctx.Arc(centerX, centerY, radius, 0., 2.0 * System.Math.PI)
+        ctx.Arc(cx, cy, radius * zoom , 0., 2.0 * System.Math.PI)
         ctx.Stroke()
 
     // 🔵 Tengelyek
         ctx.BeginPath()
-        ctx.MoveTo(centerX - radius, centerY)
-        ctx.LineTo(centerX + radius, centerY)
-        ctx.MoveTo(centerX, centerY - radius)
-        ctx.LineTo(centerX, centerY + radius)
+        let x1, y1 = transform (centerX - radius) centerY
+        let x2, y2 = transform (centerX + radius) centerY
+        ctx.MoveTo(x1, y1)
+        ctx.LineTo(x2, y2)
+        let x3, y3 = transform centerX (centerY - radius)
+        let x4, y4 = transform centerX (centerY + radius)
+        ctx.MoveTo(x3,y3)
+        ctx.LineTo(x4,y4)
         ctx.Stroke()
+        ctx.FillStyle <- "white"
+        ctx.Font <- "14px sans-serif"
+
+        let nx, ny = transform centerX (centerY - radius - 30.0)
+        let sx, sy = transform centerX (centerY + radius + 40.0)
+        let ex, ey = transform (centerX + radius + 30.0) centerY
+        let wx, wy = transform (centerX - radius - 40.0) centerY
+
+        ctx.FillText("N", nx, ny)
+        ctx.FillText("S", sx,sy)
+        ctx.FillText("E", ex,ey)
+        ctx.FillText("W", wx, wy)
+
+        for deg in 0 .. 15 .. 345 do
+            let rad = float deg * System.Math.PI / 180.0
+
+            let outerX = centerX + cos(rad) * radius
+            let outerY = centerY - sin(rad) * radius
+
+            let innerX = centerX + cos(rad) * (radius - 10.0)
+            let innerY = centerY - sin(rad) * (radius - 10.0)
+
+    // tick vonal
+            let x1, y1 = transform innerX innerY
+            let x2, y2 = transform outerX outerY
+            ctx.BeginPath()
+            ctx.MoveTo(x1, y1)
+            ctx.LineTo(x2, y2)
+            ctx.Stroke()
+
+    // csak fő szögek felirata
+            if deg % 45 = 0 then
+                let textX = centerX + cos(rad) * (radius + 20.0)
+                let textY = centerY - sin(rad) * (radius + 20.0)
+
+                let tx2, ty2 = transform textX textY
+                ctx.FillText(string deg, tx2 - 10.0, ty2 + 5.0)
 
     // 🔴 Max hossz (normalizáláshoz)
         let maxLen =
@@ -74,9 +121,10 @@ module Client =
                 let l = System.Math.Log(1.0 + d.Length)
                 l / maxLog
             let r = norm * radius
-
-            let x = centerX + cos(d.Angle) * r
-            let y = centerY - sin(d.Angle) * r
+            let baseX = centerX + cos(d.Angle) * r
+            let baseY = centerY - sin(d.Angle) * r
+            let x = centerX + (cos(d.Angle) * r * zoom) + offX
+            let y = centerY - (sin(d.Angle) * r * zoom) + offY
 
             ctx.BeginPath()
             ctx.MoveTo(centerX, centerY)
@@ -119,14 +167,26 @@ module Client =
                     attr.id "compassCanvas"
                     attr.width "400"
                     attr.height "400"
+
                     on.afterRender (fun el ->
                         let canvas = el :?> HTMLCanvasElement
 
-                        directionsVar.View
+                        canvas.AddEventListener("wheel", fun (ev: Dom.Event)  ->
+                            let e = ev :?> Dom.WheelEvent
+                            e.PreventDefault()
+
+                            let factor =
+                                if e.DeltaY < 0 then 1.1 else 0.9
+
+                            zoomVar.Value <- zoomVar.Value * factor
+                        )
+
+                        View.Map2 (fun dirs zoom -> dirs) directionsVar.View zoomVar.View
                         |> View.Sink (fun dirs ->
                             if dirs.Length > 0 then
-                                drawCompass canvas dirs
+                                 drawCompass canvas dirs
                         )
+
                         JS.Global?console?log("RAJZOLTAM")
                     )
                 ] []

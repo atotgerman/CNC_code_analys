@@ -85,42 +85,104 @@ function computeDirections(lines){
 function directionsVar(){
   return _c.directionsVar;
 }
+function zoomVar(){
+  return _c.zoomVar;
+}
 function drawCompass(canvas, dirs){
   const ctx=canvas.getContext("2d");
+  const zoom=zoomVar().Get();
+  const p=offsetVar().Get();
+  const offY=p[1];
+  const offX=p[0];
   canvas.width=400;
   canvas.height=400;
   ctx.clearRect(0, 0, 400, 400);
   const centerX=200;
   const centerY=200;
   const radius=150;
+  const transform=(x_1, y_1) =>[centerX+(x_1-centerX)*zoom+offX, centerY+(y_1-centerY)*zoom+offY];
+  const p_1=transform(centerX, centerY);
   ctx.strokeStyle="white";
   ctx.lineWidth=1;
   ctx.beginPath();
-  ctx.arc(centerX, centerY, radius, 0, 2*3.141592653589793);
+  ctx.arc(p_1[0], p_1[1], radius*zoom, 0, 2*3.141592653589793);
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(centerX-radius, centerY);
-  ctx.lineTo(centerX+radius, centerY);
-  ctx.moveTo(centerX, centerY-radius);
-  ctx.lineTo(centerX, centerY+radius);
+  const p_2=transform(centerX-radius, centerY);
+  const p_3=transform(centerX+radius, centerY);
+  ctx.moveTo(p_2[0], p_2[1]);
+  ctx.lineTo(p_3[0], p_3[1]);
+  const p_4=transform(centerX, centerY-radius);
+  const p_5=transform(centerX, centerY+radius);
+  ctx.moveTo(p_4[0], p_4[1]);
+  ctx.lineTo(p_5[0], p_5[1]);
   ctx.stroke();
+  ctx.fillStyle="white";
+  ctx.font="14px sans-serif";
+  const p_6=transform(centerX, centerY-radius-30);
+  const p_7=transform(centerX, centerY+radius+40);
+  const p_8=transform(centerX+radius+30, centerY);
+  const p_9=transform(centerX-radius-40, centerY);
+  ctx.fillText("N", p_6[0], p_6[1]);
+  ctx.fillText("S", p_7[0], p_7[1]);
+  ctx.fillText("E", p_8[0], p_8[1]);
+  ctx.fillText("W", p_9[0], p_9[1]);
+  const i=step(0, 15, 345);
+  const e=Get(i);
+  try {
+    while(e.MoveNext())
+      {
+        const deg=e.Current;
+        const rad=deg*3.141592653589793/180;
+        const outerX=centerX+Math.cos(rad)*radius;
+        const outerY=centerY-Math.sin(rad)*radius;
+        const p_10=transform(centerX+Math.cos(rad)*(radius-10), centerY-Math.sin(rad)*(radius-10));
+        const p_11=transform(outerX, outerY);
+        ctx.beginPath();
+        ctx.moveTo(p_10[0], p_10[1]);
+        ctx.lineTo(p_11[0], p_11[1]);
+        ctx.stroke();
+        if(deg%45===0){
+          const p_12=transform(centerX+Math.cos(rad)*(radius+20), centerY-Math.sin(rad)*(radius+20));
+          ctx.fillText(String(deg), p_12[0]-10, p_12[1]+5);
+        }
+        else void 0;
+      }
+  }
+  finally {
+    const _1=e;
+    if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
+  }
   const maxLen=max_1(map_1((d_1) => d_1.Length, dirs));
   const maxLog=Math.log(1+maxLen);
   ctx.strokeStyle="red";
   ctx.lineWidth=2;
-  for(let i=0, _1=dirs.length-1;i<=_1;i++){
-    const d=get(dirs, i);
+  for(let i_1=0, _2=dirs.length-1;i_1<=_2;i_1++){
+    const d=get(dirs, i_1);
     const r=Math.log(1+d.Length)/maxLog*radius;
-    const x=centerX+Math.cos(d.Angle)*r;
-    const y=centerY-Math.sin(d.Angle)*r;
+    Math.cos(d.Angle);
+    Math.sin(d.Angle);
+    const x=centerX+Math.cos(d.Angle)*r*zoom+offX;
+    const y=centerY-Math.sin(d.Angle)*r*zoom+offY;
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(x, y);
     ctx.stroke();
   }
 }
+function offsetVar(){
+  return _c.offsetVar;
+}
 function FailWith(msg){
   throw new Error(msg);
+}
+function step(min, step_1, max_2){
+  const s=Sign(step_1);
+  return takeWhile((k) => s*(max_2-k)>=0, initInfinite((k) => min+k*step_1));
+}
+function Sign(x){
+  const m=x;
+  return m===0?0:m<0?-1:1;
 }
 function KeyValue(kvp){
   return[kvp.K, kvp.V];
@@ -435,16 +497,25 @@ let _c=Lazy((_i) => class $StartupCode_Client {
   static homeDoc;
   static currentPage;
   static directionsVar;
+  static offsetVar;
   static fileContent;
+  static zoomVar;
   static {
+    this.zoomVar=_c_1.Create_1(1);
     this.fileContent=_c_1.Create_1("");
+    this.offsetVar=_c_1.Create_1([0, 0]);
     this.directionsVar=_c_1.Create_1([]);
     this.currentPage=_c_1.Create_1(Home);
     this.homeDoc=Doc.BindView((p) => p.$===0?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Home")])]):Doc.Empty, currentPage().View);
     this.analyzerDoc=Doc.BindView((p) => p.$===1?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Analyzer")]), Doc.Element("canvas", [Attr.Create("id", "compassCanvas"), Attr.Create("width", "400"), Attr.Create("height", "400"), Attr.A4((el) => {
+      el.addEventListener("wheel", (ev) => {
+        ev.preventDefault();
+        const factor=ev.deltaY<0?1.1:0.9;
+        return zoomVar().Set(zoomVar().Get()*factor);
+      });
       Sink((dirs) => {
         if(length(dirs)>0)drawCompass(el, dirs);
-      }, directionsVar().View);
+      }, Map2((_1) => _1, directionsVar().View, zoomVar().View));
       globalThis.console.log("RAJZOLTAM");
     })], [])]):Doc.Empty, currentPage().View);
     this.uploadDoc=Doc.BindView((p) => p.$===2?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Upload CNC file")])]):Doc.Empty, currentPage().View);
@@ -908,7 +979,7 @@ function InlineTemplate(el, fillWith){
       }}), o]);
       if(m[0]){
         const th=m[1];
-        return th instanceof Event?Some(Handler(get(a, 0), th.Value)):th instanceof EventQ?Some(Attr.HandlerImpl(get(a, 0), th.Value)):(console.warn("Event hole on"+get(a, 0)+" filled with non-event data", get(a, 1)),null);
+        return th instanceof Event_1?Some(Handler(get(a, 0), th.Value)):th instanceof EventQ?Some(Attr.HandlerImpl(get(a, 0), th.Value)):(console.warn("Event hole on"+get(a, 0)+" filled with non-event data", get(a, 1)),null);
       }
       else return null;
     }, SplitChars(e_1.getAttribute("ws-on"), [" "], 1))));
@@ -1280,6 +1351,9 @@ let _c_1=Lazy((_i) => class Var_1 extends Object_1 {
   static { }
 });
 class attr extends Object_1 { }
+function Map2(fn, a, a_1){
+  return CreateLazy(() => Map2_1(fn, a(), a_1()));
+}
 function Sink(act, a){
   function loop(){
     WhenRun(a(), act, () => {
@@ -1291,12 +1365,6 @@ function Sink(act, a){
 function Const(x){
   const o={s:Forever(x)};
   return() => o;
-}
-function Map(fn, a){
-  return CreateLazy(() => Map_1(fn, a()));
-}
-function Bind(fn, view){
-  return Join(Map(fn, view));
 }
 function CreateLazy(observe){
   const lv={c:null, o:observe};
@@ -1315,14 +1383,17 @@ function CreateLazy(observe){
     else return c;
   };
 }
+function Map(fn, a){
+  return CreateLazy(() => Map_1(fn, a()));
+}
+function Bind(fn, view){
+  return Join(Map(fn, view));
+}
 function Map3(fn, a, a_1, a_2){
   return CreateLazy(() => Map3_1(fn, a(), a_1(), a_2()));
 }
 function Sequence(views){
   return CreateLazy(() => Sequence_1(map((a) => a(), views)));
-}
-function Map2(fn, a, a_1){
-  return CreateLazy(() => Map2_1(fn, a(), a_1()));
 }
 function Map2Unit(a, a_1){
   return CreateLazy(() => Map2Unit_1(a(), a_1()));
@@ -1471,6 +1542,16 @@ function head(s){
 function pairwise(s){
   return map((x) =>[get(x, 0), get(x, 1)], windowed(2, s));
 }
+function initInfinite(f){
+  return{GetEnumerator:() => new T(0, null, (e) => {
+    e.c=f(e.s);
+    e.s=e.s+1;
+    return true;
+  }, void 0)};
+}
+function takeWhile(f, s){
+  return delay(() => enumUsing(Get(s), (e) => enumWhile(() => e.MoveNext()&&f(e.Current), delay(() =>[e.Current]))));
+}
 function windowed(windowSize, s){
   windowSize<=0?FailWith("The input must be positive."):void 0;
   return delay(() => enumUsing(Get(s), (e) => {
@@ -1493,6 +1574,9 @@ function map(f, s){
     });
   }};
 }
+function delay(f){
+  return{GetEnumerator:() => Get(f())};
+}
 function fold(f, x, s){
   let r=x;
   const e=Get(s);
@@ -1505,9 +1589,6 @@ function fold(f, x, s){
     const _1=e;
     if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
   }
-}
-function delay(f){
-  return{GetEnumerator:() => Get(f())};
 }
 function iter(p, s){
   const e=Get(s);
@@ -1598,13 +1679,6 @@ function take(n, s){
       if(!Equals(x, null))x.Dispose();
     });
   }};
-}
-function initInfinite(f){
-  return{GetEnumerator:() => new T(0, null, (e) => {
-    e.c=f(e.s);
-    e.s=e.s+1;
-    return true;
-  }, void 0)};
 }
 function forall(p, s){
   return!exists((x) =>!p(x), s);
@@ -1986,6 +2060,9 @@ class ConcreteVar extends Var {
   get View(){
     return this.view;
   }
+  Get(){
+    return this.current;
+  }
   SetFinal(v){
     if(this.isConst)(((_1) => _1("WebSharper.UI: invalid attempt to change value of a Var after calling SetFinal"))((s) => {
       console.log(s);
@@ -1996,9 +2073,6 @@ class ConcreteVar extends Var {
       this.current=v;
       this.snap={s:Forever(v)};
     }
-  }
-  Get(){
-    return this.current;
   }
   UpdateMaybe(f){
     const m=f(this.Get());
@@ -2011,6 +2085,27 @@ class ConcreteVar extends Var {
     this.snap=initSnap;
     this.view=() => this.snap;
     this.id=Int();
+  }
+}
+function Map2_1(fn, sn1, sn2){
+  const _1=sn1.s;
+  const _2=sn2.s;
+  if(_1!=null&&_1.$==0)return _2!=null&&_2.$==0?{s:Forever(fn(_1.$0, _2.$0))}:Map2Opt1(fn, _1.$0, sn2);
+  else if(_2!=null&&_2.$==0)return Map2Opt2(fn, _2.$0, sn1);
+  else {
+    const res={s:Waiting([], [])};
+    const cont=() => {
+      const m=res.s;
+      if(!(m!=null&&m.$==0||m!=null&&m.$==2)){
+        const _3=ValueAndForever(sn1);
+        const _4=ValueAndForever(sn2);
+        if(_3!=null&&_3.$==1)if(_4!=null&&_4.$==1)if(_3.$0[1]&&_4.$0[1])MarkForever(res, fn(_3.$0[0], _4.$0[0]));
+        else MarkReady(res, fn(_3.$0[0], _4.$0[0]));
+      }
+    };
+    When(sn1, cont, res);
+    When(sn2, cont, res);
+    return res;
   }
 }
 function WhenRun(snap, avail, obs){
@@ -2028,21 +2123,39 @@ function WhenRun(snap, avail, obs){
   }
   else avail(m.$0);
 }
-function Map_1(fn, sn){
-  const m=sn.s;
-  if(m!=null&&m.$==0)return{s:Forever(fn(m.$0))};
-  else {
-    const res={s:Waiting([], [])};
-    When(sn, (a) => {
-      MarkDone(res, sn, fn(a));
-    }, res);
-    return res;
-  }
-}
 function WhenObsoleteRun(snap, obs){
   const m=snap.s;
   if(m==null)obs();
   else m!=null&&m.$==2?(m.$0,m.$1.push(obs)):m!=null&&m.$==3?(m.$0,m.$1.push(obs)):m.$0;
+}
+function Map2Opt1(fn, x, sn2){
+  return Map_1((y) => fn(x, y), sn2);
+}
+function Map2Opt2(fn, y, sn1){
+  return Map_1((x) => fn(x, y), sn1);
+}
+function ValueAndForever(snap){
+  const m=snap.s;
+  return m!=null&&m.$==0?Some([m.$0, true]):m!=null&&m.$==2?Some([m.$0, false]):null;
+}
+function MarkForever(sn, v){
+  const m=sn.s;
+  if(m!=null&&m.$==3){
+    const q=m.$0;
+    sn.s=Forever(v);
+    for(let i=0, _1=length(q)-1;i<=_1;i++)(get(q, i))(v);
+  }
+  else void 0;
+}
+function MarkReady(sn, v){
+  const m=sn.s;
+  if(m!=null&&m.$==3){
+    const q2=m.$1;
+    const q1=m.$0;
+    sn.s=Ready(v, q2);
+    for(let i=0, _1=length(q1)-1;i<=_1;i++)(get(q1, i))(v);
+  }
+  else void 0;
 }
 function When(snap, avail, obs){
   const m=snap.s;
@@ -2058,6 +2171,34 @@ function When(snap, avail, obs){
     EnqueueSafe(q2, obs);
   }
   else avail(m.$0);
+}
+function Map_1(fn, sn){
+  const m=sn.s;
+  if(m!=null&&m.$==0)return{s:Forever(fn(m.$0))};
+  else {
+    const res={s:Waiting([], [])};
+    When(sn, (a) => {
+      MarkDone(res, sn, fn(a));
+    }, res);
+    return res;
+  }
+}
+function EnqueueSafe(q, x){
+  q.push(x);
+  if(q.length%20===0){
+    const qcopy=q.slice(0);
+    Clear(q);
+    for(let i=0, _1=length(qcopy)-1;i<=_1;i++){
+      const o=get(qcopy, i);
+      if(typeof o=="object")(((sn) => {
+        if(sn.s)q.push(sn);
+      })(o));
+      else(((f) => {
+        q.push(f);
+      })(o));
+    }
+  }
+  else void 0;
 }
 function MarkDone(res, sn, v){
   const _1=sn.s;
@@ -2112,27 +2253,6 @@ function Sequence_1(snaps){
     iter_1((s) => {
       When(s, cont, res);
     }, snaps_1);
-    return res;
-  }
-}
-function Map2_1(fn, sn1, sn2){
-  const _1=sn1.s;
-  const _2=sn2.s;
-  if(_1!=null&&_1.$==0)return _2!=null&&_2.$==0?{s:Forever(fn(_1.$0, _2.$0))}:Map2Opt1(fn, _1.$0, sn2);
-  else if(_2!=null&&_2.$==0)return Map2Opt2(fn, _2.$0, sn1);
-  else {
-    const res={s:Waiting([], [])};
-    const cont=() => {
-      const m=res.s;
-      if(!(m!=null&&m.$==0||m!=null&&m.$==2)){
-        const _3=ValueAndForever(sn1);
-        const _4=ValueAndForever(sn2);
-        if(_3!=null&&_3.$==1)if(_4!=null&&_4.$==1)if(_3.$0[1]&&_4.$0[1])MarkForever(res, fn(_3.$0[0], _4.$0[0]));
-        else MarkReady(res, fn(_3.$0[0], _4.$0[0]));
-      }
-    };
-    When(sn1, cont, res);
-    When(sn2, cont, res);
     return res;
   }
 }
@@ -2192,42 +2312,6 @@ function Join_1(snap){
   }, res);
   return res;
 }
-function EnqueueSafe(q, x){
-  q.push(x);
-  if(q.length%20===0){
-    const qcopy=q.slice(0);
-    Clear(q);
-    for(let i=0, _1=length(qcopy)-1;i<=_1;i++){
-      const o=get(qcopy, i);
-      if(typeof o=="object")(((sn) => {
-        if(sn.s)q.push(sn);
-      })(o));
-      else(((f) => {
-        q.push(f);
-      })(o));
-    }
-  }
-  else void 0;
-}
-function MarkForever(sn, v){
-  const m=sn.s;
-  if(m!=null&&m.$==3){
-    const q=m.$0;
-    sn.s=Forever(v);
-    for(let i=0, _1=length(q)-1;i<=_1;i++)(get(q, i))(v);
-  }
-  else void 0;
-}
-function MarkReady(sn, v){
-  const m=sn.s;
-  if(m!=null&&m.$==3){
-    const q2=m.$1;
-    const q1=m.$0;
-    sn.s=Ready(v, q2);
-    for(let i=0, _1=length(q1)-1;i<=_1;i++)(get(q1, i))(v);
-  }
-  else void 0;
-}
 function Map3Opt1(fn, x, y, sn3){
   return Map_1((z) => fn(x, y, z), sn3);
 }
@@ -2245,16 +2329,6 @@ function Map3Opt5(fn, y, sn1, sn3){
 }
 function Map3Opt6(fn, z, sn1, sn2){
   return Map2_1((_1, _2) => fn(_1, _2, z), sn1, sn2);
-}
-function ValueAndForever(snap){
-  const m=snap.s;
-  return m!=null&&m.$==0?Some([m.$0, true]):m!=null&&m.$==2?Some([m.$0, false]):null;
-}
-function Map2Opt1(fn, x, sn2){
-  return Map_1((y) => fn(x, y), sn2);
-}
-function Map2Opt2(fn, y, sn1){
-  return Map_1((x) => fn(x, y), sn1);
 }
 function WhenObsolete(snap, obs){
   const m=snap.s;
@@ -3229,6 +3303,55 @@ class Scheduler extends Object_1 {
     this.robin=[];
   }
 }
+function enumUsing(x, f){
+  return{GetEnumerator:() => {
+    let enum_1;
+    try {
+      enum_1=Get(f(x));
+    }
+    catch(e){
+      let c=x;
+      c.Dispose();
+      throw e;
+    }
+    return new T(null, null, (e_1) => enum_1.MoveNext()&&(e_1.c=enum_1.Current,true), () => {
+      let c_1;
+      enum_1.Dispose();
+      c_1=x;
+      c_1.Dispose();
+    });
+  }};
+}
+function enumWhile(f, s){
+  return{GetEnumerator:() => {
+    function next(en){
+      while(true)
+        {
+          const m=en.s;
+          if(Equals(m, null)){
+            if(f()){
+              en.s=Get(s);
+              en=en;
+            }
+            else return false;
+          }
+          else if(m.MoveNext()){
+            en.c=m.Current;
+            return true;
+          }
+          else {
+            m.Dispose();
+            en.s=null;
+            en=en;
+          }
+        }
+    }
+    return new T(null, null, next, (en) => {
+      const x=en.s;
+      if(!Equals(x, null))x.Dispose();
+    });
+  }};
+}
 class Text extends TemplateHole {
   name;
   fillWith;
@@ -3252,7 +3375,7 @@ class Attribute extends TemplateHole {
     return this.name;
   }
 }
-class Event extends TemplateHole {
+class Event_1 extends TemplateHole {
   name;
   fillWith;
   get Value(){
@@ -3554,55 +3677,6 @@ let _c_4=Lazy((_i) => class Proxy {
     this.BatchUpdatesEnabled=true;
   }
 });
-function enumUsing(x, f){
-  return{GetEnumerator:() => {
-    let enum_1;
-    try {
-      enum_1=Get(f(x));
-    }
-    catch(e){
-      let c=x;
-      c.Dispose();
-      throw e;
-    }
-    return new T(null, null, (e_1) => enum_1.MoveNext()&&(e_1.c=enum_1.Current,true), () => {
-      let c_1;
-      enum_1.Dispose();
-      c_1=x;
-      c_1.Dispose();
-    });
-  }};
-}
-function enumWhile(f, s){
-  return{GetEnumerator:() => {
-    function next(en){
-      while(true)
-        {
-          const m=en.s;
-          if(Equals(m, null)){
-            if(f()){
-              en.s=Get(s);
-              en=en;
-            }
-            else return false;
-          }
-          else if(m.MoveNext()){
-            en.c=m.Current;
-            return true;
-          }
-          else {
-            m.Dispose();
-            en.s=null;
-            en=en;
-          }
-        }
-    }
-    return new T(null, null, next, (en) => {
-      const x=en.s;
-      if(!Equals(x, null))x.Dispose();
-    });
-  }};
-}
 function concat_3(o){
   let r=[];
   let k;
@@ -3712,6 +3786,9 @@ function tail(l){
 }
 function listEmpty(){
   return FailWith("The input list was empty.");
+}
+function Clear(a){
+  a.splice(0, length(a));
 }
 function New_4(IsCancellationRequested, Registrations){
   return{c:IsCancellationRequested, r:Registrations};
@@ -4159,9 +4236,6 @@ function DocChildren(node){
 }
 function DomNodes(Item){
   return{$:0, $0:Item};
-}
-function Clear(a){
-  a.splice(0, length(a));
 }
 class OperationCanceledException extends Error {
   ct;
