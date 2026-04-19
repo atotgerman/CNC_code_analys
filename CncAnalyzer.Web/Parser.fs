@@ -12,25 +12,33 @@ module Parser =
     }
 
     let parseLine (line: string) =
-        let parts = line.Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries)
+        let parts = line.Split(',')
 
-        let tryGet (prefix:string) =
-            parts
-            |>Array.tryFind (fun (p: string) -> p.StartsWith(prefix))
-            |> Option.map (fun p -> p.Substring(1) |> float)
+        if parts.Length >= 3 then
+            let cmd = parts.[0].Trim()
 
-        let cmd =
-            parts
-            |> Array.tryFind (fun p -> p.StartsWith("G"))
-            |> Option.defaultValue ""
+            let tryParseFloat (s: string) =
+                match System.Double.TryParse(s) with
+                | true, v -> Some v
+                | _ -> None
 
-        {
+            let x = tryParseFloat parts.[1]
+            let y = tryParseFloat parts.[2]
+
+            {
                 Cmd = cmd
-                X = tryGet "X"
-                Y = tryGet "Y"
-        }
+                X = x
+                Y = y
+            }
+        else
+            {
+                Cmd = ""
+                X = None
+                Y = None
+            }
     let parseGCode (text: string) =
             text.Split('\n')
             |> Array.map (fun l -> l.Trim())
             |> Array.filter (fun l -> l <> "")
+            |> Array.skip 1 
             |> Array.map parseLine

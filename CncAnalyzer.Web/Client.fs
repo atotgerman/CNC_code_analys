@@ -7,6 +7,7 @@ open WebSharper.UI.Templating
 open WebSharper.UI.Html
 open WebSharper.JavaScript
 open CncAnalyzer.Web.Parser
+open WebSharper.JavaScript.Dom
 
 [<JavaScript>]
 module Client =
@@ -18,6 +19,50 @@ module Client =
         | Analyzer
         | Upload
     
+    type Direction = {
+        Angle: float
+        Length: float
+    }
+
+    let directionsVar : Var<Direction[]> = Var.Create [||]
+    let drawCompass (canvas: HTMLCanvasElement) (dirs: Direction[]) =
+        let ctx = canvas.GetContext("2d")
+
+        canvas.Width <- 400
+        canvas.Height <- 400
+
+        ctx.ClearRect(0., 0., 400., 400.)
+
+        ctx.StrokeStyle <- "red"
+        ctx.LineWidth <- 2.0
+
+        let centerX = 200.0
+        let centerY = 200.0
+        let scale = 100.0
+
+        for d in dirs do
+            let x = centerX + cos(d.Angle) * d.Length * scale
+            let y = centerY - sin(d.Angle) * d.Length * scale
+
+            ctx.BeginPath()
+            ctx.MoveTo(centerX, centerY)
+            ctx.LineTo(x, y)
+            ctx.Stroke()
+    let computeDirections (lines: Parser.GCodeLine[]) =
+        lines
+        |> Array.pairwise
+        |> Array.choose (fun (a, b) ->
+            match a.X, a.Y, b.X, b.Y with
+            | Some x1, Some y1, Some x2, Some y2 ->
+                let dx = x2 - x1
+                let dy = y2 - y1
+
+                let angle = System.Math.Atan2(dy, dx)
+                let length = System.Math.Sqrt(dx * dx + dy * dy)
+
+                Some { Angle = angle; Length = length }
+            | _ -> None
+    )
 
     let currentPage = Var.Create Home
 
@@ -32,27 +77,50 @@ module Client =
     let analyzerDoc =
         currentPage.View
         |> Doc.BindView (fun p ->
-            if p = Analyzer then
-                div [] [ h2 [] [ text "Analyzer" ] ]
-            else Doc.Empty
-        )
-    open WebSharper.JavaScript
+        if p = Analyzer then
+            div [] [
+                h2 [] [ text "Analyzer" ]
+
+                canvas [
+                    attr.id "compassCanvas"
+                    attr.width "400"
+                    attr.height "400"
+                    on.afterRender (fun el ->
+                        let canvas = el :?> HTMLCanvasElement
+
+                        directionsVar.View
+                        |> View.Sink (fun dirs ->
+                            if dirs.Length > 0 then
+                                drawCompass canvas dirs
+                        )
+                        JS.Global?console?log("RAJZOLTAM")
+                    )
+                ] []
+            ] 
+        else Doc.Empty
+    )
 
     let initFileUpload () =
         let input = JS.Document.GetElementById("fileInput")
 
         input?onchange <- fun _ ->
             if input?files?length > 0 then
+                JS.Global?console?log("CHANGE FIRED")
                 let file = input?files?("0")
-
+                JS.Global?console?log("FILE OK")
                 let reader = JS.New(JS.Global?FileReader)
 
                 reader?onload <- fun _ ->
-                    let content = reader?result
+                    JS.Global?console?log("ONLOAD FIRED")
+                    let content = string (reader?result)   // 🔥 fontos: string!
                     fileContent.Value <- content
-                    let parsed = parseGCode content
 
-                    JS.Global?console?log(content)
+                    let parsed = Parser.parseGCode content
+                    let dirs = computeDirections parsed
+
+                    directionsVar.Value <- dirs
+
+                    JS.Global?console?log(dirs)
 
                 reader?readAsText(file)
 
