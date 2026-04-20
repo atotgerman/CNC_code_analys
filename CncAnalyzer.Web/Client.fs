@@ -165,8 +165,8 @@ module Client =
 
                 canvas [
                     attr.id "compassCanvas"
-                    attr.width "400"
-                    attr.height "400"
+                    attr.width "600"
+                    attr.height "600"
 
                     on.afterRender (fun el ->
                         let canvas = el :?> HTMLCanvasElement

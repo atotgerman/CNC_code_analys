@@ -507,7 +507,7 @@ let _c=Lazy((_i) => class $StartupCode_Client {
     this.directionsVar=_c_1.Create_1([]);
     this.currentPage=_c_1.Create_1(Home);
     this.homeDoc=Doc.BindView((p) => p.$===0?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Home")])]):Doc.Empty, currentPage().View);
-    this.analyzerDoc=Doc.BindView((p) => p.$===1?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Analyzer")]), Doc.Element("canvas", [Attr.Create("id", "compassCanvas"), Attr.Create("width", "400"), Attr.Create("height", "400"), Attr.A4((el) => {
+    this.analyzerDoc=Doc.BindView((p) => p.$===1?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Analyzer")]), Doc.Element("canvas", [Attr.Create("id", "compassCanvas"), Attr.Create("width", "600"), Attr.Create("height", "600"), Attr.A4((el) => {
       el.addEventListener("wheel", (ev) => {
         ev.preventDefault();
         const factor=ev.deltaY<0?1.1:0.9;
