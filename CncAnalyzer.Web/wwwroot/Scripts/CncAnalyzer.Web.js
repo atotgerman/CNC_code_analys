@@ -198,20 +198,14 @@ function drawGCodeReal(canvas, cmds){
   ctx.clearRect(0, 0, 600, 600);
   const centerX=300;
   const centerY=300;
-  const pts=map((a_1) => {
+  map((a) => {
     let _1;
-    if(a_1.$==1)_1=[a_1.$0, a_1.$1];
-    else a_1.$==2?_1=[a_1.$0, a_1.$1]:_1=[a_1.$0, a_1.$1];
+    if(a.$==1)_1=[a.$0, a.$1];
+    else a.$==2?_1=[a.$0, a.$1]:_1=[a.$0, a.$1];
     return[_1[0], _1[1]];
   }, cmds);
-  const minX=(minBy((t) => t[0], pts))[0];
-  const maxX=(maxBy((t) => t[0], pts))[0];
-  const minY=(minBy((t) => t[1], pts))[1];
-  const maxY=(maxBy((t) => t[1], pts))[1];
-  const a=500/(maxX-minX);
-  const b=500/(maxY-minY);
-  const scale=Compare(a, b)===-1?a:b;
-  const transform=(x, y) =>[centerX+(x-(minX+maxX)/2)*scale, centerY-(y-(minY+maxY)/2)*scale];
+  const pxPerMm=zoomVar().Get();
+  const transform=(x_1, y_1) =>[centerX+x_1*pxPerMm+(offsetVar().Get())[0], centerY-y_1*pxPerMm+(offsetVar().Get())[1]];
   ctx.strokeStyle="#555";
   ctx.beginPath();
   ctx.moveTo(0, centerY);
@@ -219,57 +213,76 @@ function drawGCodeReal(canvas, cmds){
   ctx.moveTo(centerX, 0);
   ctx.lineTo(centerX, 600);
   ctx.stroke();
+  ctx.strokeStyle="#333";
+  ctx.lineWidth=1;
+  const step_1=10;
+  for(let i=-50, _1=50;i<=_1;i++){
+    const x=i*step_1;
+    const p=transform(x, -500);
+    const p_1=transform(x, 500);
+    ctx.beginPath();
+    ctx.moveTo(p[0], p[1]);
+    ctx.lineTo(p_1[0], p_1[1]);
+    ctx.stroke();
+    const y=i*step_1;
+    const p_2=transform(-500, y);
+    const p_3=transform(500, y);
+    ctx.beginPath();
+    ctx.moveTo(p_2[0], p_2[1]);
+    ctx.lineTo(p_3[0], p_3[1]);
+    ctx.stroke();
+  }
   ctx.strokeStyle="lime";
   ctx.lineWidth=2;
   let prev=[0, 0];
-  function loop(i){
+  function loop(i_1){
     while(true)
       {
-        if(i<length(cmds)){
-          const m=get(cmds, i);
+        if(i_1<length(cmds)){
+          const m=get(cmds, i_1);
           if(m.$==1){
-            const y=m.$1;
-            const x=m.$0;
-            const p=transform.apply(null, prev);
-            const p_1=transform(x, y);
-            ctx.beginPath();
-            ctx.moveTo(p[0], p[1]);
-            ctx.lineTo(p_1[0], p_1[1]);
-            ctx.stroke();
-            prev=[x, y];
-            i=i+1;
-          }
-          else if(m.$==2){
             const y_1=m.$1;
             const x_1=m.$0;
-            if(i>=1&&i+1<length(cmds)){
-              const p2=[x_1, y_1];
-              const m_1=get(cmds, i+1);
-              const p3=m_1.$==2?[m_1.$0, m_1.$1]:[x_1, y_1];
+            const p_4=transform.apply(null, prev);
+            const p_5=transform(x_1, y_1);
+            ctx.beginPath();
+            ctx.moveTo(p_4[0], p_4[1]);
+            ctx.lineTo(p_5[0], p_5[1]);
+            ctx.stroke();
+            prev=[x_1, y_1];
+            i_1=i_1+1;
+          }
+          else if(m.$==2){
+            const y_2=m.$1;
+            const x_2=m.$0;
+            if(i_1>=1&&i_1+1<length(cmds)){
+              const p2=[x_2, y_2];
+              const m_1=get(cmds, i_1+1);
+              const p3=m_1.$==2?[m_1.$0, m_1.$1]:[x_2, y_2];
               const m_2=circleFrom3Points(prev[0], prev[1], p2[0], p2[1], p3[0], p3[1]);
               if(m_2==null){ }
               else {
                 const r=m_2.$0[2];
-                const p_2=transform(m_2.$0[0], m_2.$0[1]);
-                const tcy=p_2[1];
-                const tcx=p_2[0];
-                const p_3=transform.apply(null, prev);
-                const p_4=transform.apply(null, p2);
-                const startAng=Math.atan2(p_3[1]-tcy, p_3[0]-tcx);
-                const endAng=Math.atan2(p_4[1]-tcy, p_4[0]-tcx);
+                const p_6=transform(m_2.$0[0], m_2.$0[1]);
+                const tcy=p_6[1];
+                const tcx=p_6[0];
+                const p_7=transform.apply(null, prev);
+                const p_8=transform.apply(null, p2);
+                const startAng=Math.atan2(p_7[1]-tcy, p_7[0]-tcx);
+                const endAng=Math.atan2(p_8[1]-tcy, p_8[0]-tcx);
                 ctx.beginPath();
-                ctx.arc(tcx, tcy, r*scale, startAng, endAng, true);
+                ctx.arc(tcx, tcy, r*pxPerMm, startAng, endAng, true);
                 ctx.stroke();
               }
             }
-            prev=[x_1, y_1];
-            i=i+1;
+            prev=[x_2, y_2];
+            i_1=i_1+1;
           }
           else {
-            const y_2=m.$1;
-            const x_2=m.$0;
-            prev=[x_2, y_2];
-            i=i+1;
+            const y_3=m.$1;
+            const x_3=m.$0;
+            prev=[x_3, y_3];
+            i_1=i_1+1;
           }
         }
         else return null;
@@ -643,7 +656,7 @@ let _c=Lazy((_i) => class $StartupCode_Client {
     })], []), Doc.Element("canvas", [Attr.Create("id", "pathCanvas"), Attr.Create("width", "600"), Attr.Create("height", "600"), Attr.A4((el) => {
       Sink((cmds) => {
         if(length(cmds)>0)drawGCodeReal(el, cmds);
-      }, gcodeVar().View);
+      }, Map2((_1) => _1, gcodeVar().View, zoomVar().View));
     })], [])])]):Doc.Empty, currentPage().View);
     this.uploadDoc=Doc.BindView((p) => p.$===2?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Upload CNC file")])]):Doc.Empty, currentPage().View);
   }
@@ -1395,34 +1408,6 @@ function max(arr){
   for(let i=1, _1=arr.length-1;i<=_1;i++){
     const x=arr[i];
     if(Compare(x, m)===1)m=x;
-  }
-  return m;
-}
-function minBy(f, arr){
-  nonEmpty(arr);
-  let m=arr[0];
-  let fm=f(m);
-  for(let i=1, _1=arr.length-1;i<=_1;i++){
-    const x=arr[i];
-    const fx=f(x);
-    if(Compare(fx, fm)===-1){
-      m=x;
-      fm=fx;
-    }
-  }
-  return m;
-}
-function maxBy(f, arr){
-  nonEmpty(arr);
-  let m=arr[0];
-  let fm=f(m);
-  for(let i=1, _1=arr.length-1;i<=_1;i++){
-    const x=arr[i];
-    const fx=f(x);
-    if(Compare(fx, fm)===1){
-      m=x;
-      fm=fx;
-    }
   }
   return m;
 }

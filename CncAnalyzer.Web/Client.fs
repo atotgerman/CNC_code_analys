@@ -173,19 +173,11 @@ module Client =
             |> Array.map (function
                 | Rapid(x,y) | Line(x,y) | ArcCW(x,y) -> (x,y))
 
-        let minX = pts |> Array.minBy fst |> fst
-        let maxX = pts |> Array.maxBy fst |> fst
-        let minY = pts |> Array.minBy snd |> snd
-        let maxY = pts |> Array.maxBy snd |> snd
-
-        let scale =
-            let w = maxX - minX
-            let h = maxY - minY
-            min (500.0 / w) (500.0 / h)
+        let pxPerMm = zoomVar.Value
 
         let transform (x,y) =
-            let tx = centerX + (x - (minX+maxX)/2.0)*scale
-            let ty = centerY - (y - (minY+maxY)/2.0)*scale
+            let tx = centerX + x * pxPerMm + fst offsetVar.Value
+            let ty = centerY - y * pxPerMm + snd offsetVar.Value
             tx, ty
 
         // ⚪ tengelyek
@@ -196,6 +188,30 @@ module Client =
         ctx.MoveTo(centerX,0.)
         ctx.LineTo(centerX,600.)
         ctx.Stroke()
+
+        ctx.StrokeStyle <- "#333"
+        ctx.LineWidth <- 1.0
+
+        let step = 10.0  // 10 mm
+
+        for i in -50 .. 50 do
+            let x = float i * step
+            let x1,y1 = transform(x, -500.0)
+            let x2,y2 = transform(x, 500.0)
+
+            ctx.BeginPath()
+            ctx.MoveTo(x1,y1)
+            ctx.LineTo(x2,y2)
+            ctx.Stroke()
+
+            let y = float i * step
+            let x3,y3 = transform(-500.0, y)
+            let x4,y4 = transform(500.0, y)
+
+            ctx.BeginPath()
+            ctx.MoveTo(x3,y3)
+            ctx.LineTo(x4,y4)
+            ctx.Stroke()
 
         // 🟢 rajzolás
         ctx.StrokeStyle <- "lime"
@@ -246,7 +262,7 @@ module Client =
                             let endAng   = atan2 (ey - tcy) (ex - tcx)
 
                             ctx.BeginPath()
-                            ctx.Arc(tcx,tcy,r*scale,startAng,endAng,true) // CW
+                            ctx.Arc(tcx,tcy,r*pxPerMm,startAng,endAng,true)
                             ctx.Stroke()
 
                         | None -> ()
@@ -323,8 +339,8 @@ module Client =
                         on.afterRender (fun el ->
                             let canvas = el :?> HTMLCanvasElement
 
-                            gcodeVar.View
-                            |> View.Sink (fun cmds ->
+                            View.Map2 (fun cmds zoom -> cmds) gcodeVar.View zoomVar.View
+                                |> View.Sink (fun cmds ->
                                 if cmds.Length > 0 then
                                     drawGCodeReal canvas cmds
                             )
