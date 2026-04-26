@@ -205,7 +205,7 @@ function drawGCodeReal(canvas, cmds){
     return[_1[0], _1[1]];
   }, cmds);
   const pxPerMm=zoomVar().Get();
-  const transform=(x_1, y_1) =>[centerX+x_1*pxPerMm+(offsetVar().Get())[0], centerY-y_1*pxPerMm+(offsetVar().Get())[1]];
+  const transform=(x_2, y_2) =>[centerX+x_2*pxPerMm+(offsetVar().Get())[0], centerY-y_2*pxPerMm+(offsetVar().Get())[1]];
   ctx.strokeStyle="#555";
   ctx.beginPath();
   ctx.moveTo(0, centerY);
@@ -213,20 +213,29 @@ function drawGCodeReal(canvas, cmds){
   ctx.moveTo(centerX, 0);
   ctx.lineTo(centerX, 600);
   ctx.stroke();
-  ctx.strokeStyle="#333";
-  ctx.lineWidth=1;
-  const step_1=10;
+  ctx.fillStyle="#aaa";
+  ctx.font="10px monospace";
+  const step_1=25;
   for(let i=-50, _1=50;i<=_1;i++){
     const x=i*step_1;
-    const p=transform(x, -500);
-    const p_1=transform(x, 500);
+    ctx.fillText(String(x), (transform(x, 0))[0]+2, centerY+12);
+    const y=i*step_1;
+    ctx.fillText(String(y), centerX+4, (transform(0, y))[1]-2);
+  }
+  ctx.strokeStyle="#333";
+  ctx.lineWidth=1;
+  const step_2=10;
+  for(let i_1=-50, _2=50;i_1<=_2;i_1++){
+    const x_1=i_1*step_2;
+    const p=transform(x_1, -500);
+    const p_1=transform(x_1, 500);
     ctx.beginPath();
     ctx.moveTo(p[0], p[1]);
     ctx.lineTo(p_1[0], p_1[1]);
     ctx.stroke();
-    const y=i*step_1;
-    const p_2=transform(-500, y);
-    const p_3=transform(500, y);
+    const y_1=i_1*step_2;
+    const p_2=transform(-500, y_1);
+    const p_3=transform(500, y_1);
     ctx.beginPath();
     ctx.moveTo(p_2[0], p_2[1]);
     ctx.lineTo(p_3[0], p_3[1]);
@@ -235,30 +244,30 @@ function drawGCodeReal(canvas, cmds){
   ctx.strokeStyle="lime";
   ctx.lineWidth=2;
   let prev=[0, 0];
-  function loop(i_1){
+  function loop(i_2){
     while(true)
       {
-        if(i_1<length(cmds)){
-          const m=get(cmds, i_1);
+        if(i_2<length(cmds)){
+          const m=get(cmds, i_2);
           if(m.$==1){
-            const y_1=m.$1;
-            const x_1=m.$0;
+            const y_2=m.$1;
+            const x_2=m.$0;
             const p_4=transform.apply(null, prev);
-            const p_5=transform(x_1, y_1);
+            const p_5=transform(x_2, y_2);
             ctx.beginPath();
             ctx.moveTo(p_4[0], p_4[1]);
             ctx.lineTo(p_5[0], p_5[1]);
             ctx.stroke();
-            prev=[x_1, y_1];
-            i_1=i_1+1;
+            prev=[x_2, y_2];
+            i_2=i_2+1;
           }
           else if(m.$==2){
-            const y_2=m.$1;
-            const x_2=m.$0;
-            if(i_1>=1&&i_1+1<length(cmds)){
-              const p2=[x_2, y_2];
-              const m_1=get(cmds, i_1+1);
-              const p3=m_1.$==2?[m_1.$0, m_1.$1]:[x_2, y_2];
+            const y_3=m.$1;
+            const x_3=m.$0;
+            if(i_2>=1&&i_2+1<length(cmds)){
+              const p2=[x_3, y_3];
+              const m_1=get(cmds, i_2+1);
+              const p3=m_1.$==2?[m_1.$0, m_1.$1]:[x_3, y_3];
               const m_2=circleFrom3Points(prev[0], prev[1], p2[0], p2[1], p3[0], p3[1]);
               if(m_2==null){ }
               else {
@@ -275,14 +284,14 @@ function drawGCodeReal(canvas, cmds){
                 ctx.stroke();
               }
             }
-            prev=[x_2, y_2];
-            i_1=i_1+1;
+            prev=[x_3, y_3];
+            i_2=i_2+1;
           }
           else {
-            const y_3=m.$1;
-            const x_3=m.$0;
-            prev=[x_3, y_3];
-            i_1=i_1+1;
+            const y_4=m.$1;
+            const x_4=m.$0;
+            prev=[x_4, y_4];
+            i_2=i_2+1;
           }
         }
         else return null;

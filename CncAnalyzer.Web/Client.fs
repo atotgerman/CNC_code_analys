@@ -192,7 +192,7 @@ module Client =
         ctx.FillStyle <- "#aaa"
         ctx.Font <- "10px monospace"
 
-        let step = 10.0
+        let step = 25.0
 
         for i in -50 .. 50 do
             let x = float i * step
