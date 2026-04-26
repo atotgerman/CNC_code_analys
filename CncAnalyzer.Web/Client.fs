@@ -34,7 +34,14 @@ module Client =
         X: float
         Y: float
     }
-    
+    let saveCanvasAsImage (canvasId: string) =
+        let canvas = JS.Document.GetElementById(canvasId) :?> HTMLCanvasElement
+        let dataUrl = canvas.ToDataURL("image/png")
+
+        let link = JS.Document.CreateElement("a")
+        link?href <- dataUrl
+        link?download <- canvasId + ".png"
+        link?click()
     let offsetVar = Var.Create (0.0, 0.0)
     let directionsVar : Var<Direction[]> = Var.Create [||]
     let drawCompass (canvas: HTMLCanvasElement) (dirs: Direction[]) =
@@ -360,6 +367,34 @@ module Client =
                             )
                         )
                     ] []
+
+
+                    div [ attr.``class`` "flex gap-4 pt-4" ] [
+
+                        // Path mentés
+                        gcodeVar.View
+                        |> View.Map (fun cmds ->
+                            if cmds.Length > 0 then
+                                button [
+                                    attr.``class`` "px-4 py-2 bg-green-600 hover:bg-green-500 rounded"
+                                    on.click (fun _ -> saveCanvasAsImage "pathCanvas")
+                                ] [ text "Save Path as PNG" ]
+                            else Doc.Empty
+                        )
+                        |> Doc.EmbedView
+
+                        // Compass mentés
+                        directionsVar.View
+                        |> View.Map (fun dirs ->
+                            if dirs.Length > 0 then
+                                button [
+                                    attr.``class`` "px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded"
+                                    on.click (fun _ -> saveCanvasAsImage "compassCanvas")
+                                ] [ text "Save Compass as PNG" ]
+                            else Doc.Empty
+                        )
+                        |> Doc.EmbedView
+                    ]
                 ]
             ]
         else Doc.Empty

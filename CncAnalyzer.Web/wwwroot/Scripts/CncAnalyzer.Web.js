@@ -299,6 +299,13 @@ function drawGCodeReal(canvas, cmds){
   }
   loop(0);
 }
+function saveCanvasAsImage(canvasId){
+  const dataUrl=globalThis.document.getElementById(canvasId).toDataURL("image/png");
+  const link=globalThis.document.createElement("a");
+  link.href=dataUrl;
+  link.download=canvasId+".png";
+  return link.click();
+}
 function offsetVar(){
   return _c.offsetVar;
 }
@@ -666,7 +673,7 @@ let _c=Lazy((_i) => class $StartupCode_Client {
       Sink((cmds) => {
         if(length(cmds)>0)drawGCodeReal(el, cmds);
       }, Map2((_1) => _1, gcodeVar().View, zoomVar().View));
-    })], [])])]):Doc.Empty, currentPage().View);
+    })], []), Doc.Element("div", [Attr.Create("class", "flex gap-4 pt-4")], [Doc.EmbedView(Map((cmds) => length(cmds)>0?Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-green-600 hover:bg-green-500 rounded"), Attr.HandlerImpl("click", () => saveCanvasAsImage("pathCanvas"))], [Doc.TextNode("Save Path as PNG")]):Doc.Empty, gcodeVar().View)), Doc.EmbedView(Map((dirs) => length(dirs)>0?Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded"), Attr.HandlerImpl("click", () => saveCanvasAsImage("compassCanvas"))], [Doc.TextNode("Save Compass as PNG")]):Doc.Empty, directionsVar().View))])])]):Doc.Empty, currentPage().View);
     this.uploadDoc=Doc.BindView((p) => p.$===2?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Upload CNC file")])]):Doc.Empty, currentPage().View);
   }
 });
@@ -1332,18 +1339,18 @@ class Doc extends Object_1 {
   static Mk(node, updates){
     return new Doc(node, updates);
   }
-  static RunInPlace(childrenOnly, parent, doc){
-    const st=CreateRunState(parent, doc.docNode);
-    Sink(get_UseAnimations()||BatchUpdatesEnabled()?StartProcessor(PerformAnimatedUpdate(childrenOnly, st, doc.docNode)):() => {
-      PerformSyncUpdate(childrenOnly, st, doc.docNode);
-    }, doc.updates);
-  }
   static EmbedView(view){
     const node=CreateEmbedNode();
     return Doc.Mk(EmbedDoc(node), Map(() => { }, Bind((doc) => {
       UpdateEmbedNode(node, doc.docNode);
       return doc.updates;
     }, view)));
+  }
+  static RunInPlace(childrenOnly, parent, doc){
+    const st=CreateRunState(parent, doc.docNode);
+    Sink(get_UseAnimations()||BatchUpdatesEnabled()?StartProcessor(PerformAnimatedUpdate(childrenOnly, st, doc.docNode)):() => {
+      PerformSyncUpdate(childrenOnly, st, doc.docNode);
+    }, doc.updates);
   }
   static Element(name, attr_1, children){
     const a=Attr.Concat(attr_1);
@@ -1670,6 +1677,9 @@ function Sink(act, a){
   }
   scheduler().Fork(loop);
 }
+function Map(fn, a){
+  return CreateLazy(() => Map_1(fn, a()));
+}
 function Const(x){
   const o={s:Forever(x)};
   return() => o;
@@ -1691,11 +1701,11 @@ function CreateLazy(observe){
     else return c;
   };
 }
-function Map(fn, a){
-  return CreateLazy(() => Map_1(fn, a()));
-}
 function Bind(fn, view){
   return Join(Map(fn, view));
+}
+function Join(a){
+  return CreateLazy(() => Join_1(a()));
 }
 function Map3(fn, a, a_1, a_2){
   return CreateLazy(() => Map3_1(fn, a(), a_1(), a_2()));
@@ -1705,9 +1715,6 @@ function Sequence(views){
 }
 function Map2Unit(a, a_1){
   return CreateLazy(() => Map2Unit_1(a(), a_1()));
-}
-function Join(a){
-  return CreateLazy(() => Join_1(a()));
 }
 class HashSet extends Object_1 {
   equals;
@@ -2188,11 +2195,11 @@ class Exception extends Object_1 { }
 function TextNodeDoc(Item){
   return{$:5, $0:Item};
 }
-function TreeDoc(Item){
-  return{$:6, $0:Item};
-}
 function EmbedDoc(Item){
   return{$:2, $0:Item};
+}
+function TreeDoc(Item){
+  return{$:6, $0:Item};
 }
 function TextDoc(Item){
   return{$:4, $0:Item};
@@ -2293,6 +2300,17 @@ function WhenRun(snap, avail, obs){
   }
   else avail(m.$0);
 }
+function Map_1(fn, sn){
+  const m=sn.s;
+  if(m!=null&&m.$==0)return{s:Forever(fn(m.$0))};
+  else {
+    const res={s:Waiting([], [])};
+    When(sn, (a) => {
+      MarkDone(res, sn, fn(a));
+    }, res);
+    return res;
+  }
+}
 function WhenObsoleteRun(snap, obs){
   const m=snap.s;
   if(m==null)obs();
@@ -2342,16 +2360,10 @@ function When(snap, avail, obs){
   }
   else avail(m.$0);
 }
-function Map_1(fn, sn){
-  const m=sn.s;
-  if(m!=null&&m.$==0)return{s:Forever(fn(m.$0))};
-  else {
-    const res={s:Waiting([], [])};
-    When(sn, (a) => {
-      MarkDone(res, sn, fn(a));
-    }, res);
-    return res;
-  }
+function MarkDone(res, sn, v){
+  const _1=sn.s;
+  if(_1!=null&&_1.$==0)MarkForever(res, v);
+  else MarkReady(res, v);
 }
 function EnqueueSafe(q, x){
   q.push(x);
@@ -2370,10 +2382,23 @@ function EnqueueSafe(q, x){
   }
   else void 0;
 }
-function MarkDone(res, sn, v){
-  const _1=sn.s;
-  if(_1!=null&&_1.$==0)MarkForever(res, v);
-  else MarkReady(res, v);
+function Join_1(snap){
+  const res={s:Waiting([], [])};
+  When(snap, (x) => {
+    const y=x();
+    When(y, (v) => {
+      let _1;
+      const _2=y.s;
+      if(_2!=null&&_2.$==0){
+        const _3=snap.s;
+        _1=_3!=null&&_3.$==0;
+      }
+      else _1=false;
+      if(_1)MarkForever(res, v);
+      else MarkReady(res, v);
+    }, res);
+  }, res);
+  return res;
 }
 function Map3_1(fn, sn1, sn2, sn3){
   const _1=sn1.s;
@@ -2464,24 +2489,6 @@ function Copy(sn){
   }
   else return sn;
 }
-function Join_1(snap){
-  const res={s:Waiting([], [])};
-  When(snap, (x) => {
-    const y=x();
-    When(y, (v) => {
-      let _1;
-      const _2=y.s;
-      if(_2!=null&&_2.$==0){
-        const _3=snap.s;
-        _1=_3!=null&&_3.$==0;
-      }
-      else _1=false;
-      if(_1)MarkForever(res, v);
-      else MarkReady(res, v);
-    }, res);
-  }, res);
-  return res;
-}
 function Map3Opt1(fn, x, y, sn3){
   return Map_1((z) => fn(x, y, z), sn3);
 }
@@ -2511,6 +2518,11 @@ class Attr {
       el.setAttribute(name, value);
     });
   }
+  static HandlerImpl(event, q){
+    return Attr.A3((el) => {
+      el.addEventListener(event, (d) =>(q(el))(d), false);
+    });
+  }
   static A4(onAfterRender){
     return Create_1(Attr, {$:4, $0:onAfterRender});
   }
@@ -2520,11 +2532,6 @@ class Attr {
   }
   static A3(init_2){
     return Create_1(Attr, {$:3, $0:init_2});
-  }
-  static HandlerImpl(event, q){
-    return Attr.A3((el) => {
-      el.addEventListener(event, (d) =>(q(el))(d), false);
-    });
   }
   static A1(Item){
     return Create_1(Attr, {$:1, $0:Item});
@@ -2697,6 +2704,13 @@ let _c_3=Lazy((_i) => class $StartupCode_Templates {
 function LinkElement(el, children){
   InsertDoc(el, children, null);
 }
+function CreateEmbedNode(){
+  return{Current:null, Dirty:false};
+}
+function UpdateEmbedNode(node, upd){
+  node.Current=upd;
+  node.Dirty=true;
+}
 function InsertDoc(parent, doc, pos){
   while(true)
     {
@@ -2736,13 +2750,6 @@ function PerformSyncUpdate(childrenOnly, st, doc){
   const cur=FindAll(doc);
   SyncElemNode(childrenOnly, st.Top);
   st.PreviousNodes=cur;
-}
-function CreateEmbedNode(){
-  return{Current:null, Dirty:false};
-}
-function UpdateEmbedNode(node, upd){
-  node.Current=upd;
-  node.Dirty=true;
 }
 function InsertBeforeDelim(afterDelim, doc){
   const p=afterDelim.parentNode;
