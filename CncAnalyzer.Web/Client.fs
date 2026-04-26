@@ -189,6 +189,20 @@ module Client =
         ctx.LineTo(centerX,600.)
         ctx.Stroke()
 
+        ctx.FillStyle <- "#aaa"
+        ctx.Font <- "10px monospace"
+
+        let step = 10.0
+
+        for i in -50 .. 50 do
+            let x = float i * step
+            let tx, _ = transform(x, 0.0)
+            ctx.FillText(string x, tx + 2.0, centerY + 12.0)
+
+            let y = float i * step
+            let _, ty = transform(0.0, y)
+            ctx.FillText(string y, centerX + 4.0, ty - 2.0)
+
         ctx.StrokeStyle <- "#333"
         ctx.LineWidth <- 1.0
 
