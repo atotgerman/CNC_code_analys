@@ -12,6 +12,12 @@ open WebSharper.JavaScript.Dom
 [<JavaScript>]
 module Client =
     let zoomVar = Var.Create 1.0
+    type Cmd =
+        | Rapid of float*float
+        | Line of float*float
+        | ArcCW of float*float
+    
+    let gcodeVar : Var<Cmd[]> = Var.Create [||]
     type IndexTemplate = Template<"wwwroot/index.html", ClientLoad.FromDocument>
     let fileContent = Var.Create ""
     type Page =
@@ -28,7 +34,7 @@ module Client =
         X: float
         Y: float
     }
-
+    
     let offsetVar = Var.Create (0.0, 0.0)
     let directionsVar : Var<Direction[]> = Var.Create [||]
     let drawCompass (canvas: HTMLCanvasElement) (dirs: Direction[]) =
@@ -130,6 +136,125 @@ module Client =
             ctx.MoveTo(centerX, centerY)
             ctx.LineTo(x, y)
             ctx.Stroke()
+    let circleFrom3Points (p1: float*float) (p2: float*float) (p3: float*float) =
+        let (x1,y1) = p1
+        let (x2,y2) = p2
+        let (x3,y3) = p3
+
+        let a = x2 - x1
+        let b = y2 - y1
+        let c = x3 - x1
+        let d = y3 - y1
+
+        let e = a*(x1+x2) + b*(y1+y2)
+        let f = c*(x1+x3) + d*(y1+y3)
+        let g = 2.0*(a*(y3-y2) - b*(x3-x2))
+
+        if abs g < 1e-6 then None
+        else
+            let cx = (d*e - b*f) / g
+            let cy = (a*f - c*e) / g
+            let r = sqrt((cx-x1)**2.0 + (cy-y1)**2.0)
+            Some (cx, cy, r)
+
+    let drawGCodeReal (canvas: HTMLCanvasElement) (cmds: Cmd[]) =
+        let ctx = canvas.GetContext("2d")
+
+        canvas.Width <- 600
+        canvas.Height <- 600
+        ctx.ClearRect(0.,0.,600.,600.)
+
+        let centerX = 300.0
+        let centerY = 300.0
+
+        // 🔵 összes pont kigyűjtése bounding boxhoz
+        let pts =
+            cmds
+            |> Array.map (function
+                | Rapid(x,y) | Line(x,y) | ArcCW(x,y) -> (x,y))
+
+        let minX = pts |> Array.minBy fst |> fst
+        let maxX = pts |> Array.maxBy fst |> fst
+        let minY = pts |> Array.minBy snd |> snd
+        let maxY = pts |> Array.maxBy snd |> snd
+
+        let scale =
+            let w = maxX - minX
+            let h = maxY - minY
+            min (500.0 / w) (500.0 / h)
+
+        let transform (x,y) =
+            let tx = centerX + (x - (minX+maxX)/2.0)*scale
+            let ty = centerY - (y - (minY+maxY)/2.0)*scale
+            tx, ty
+
+        // ⚪ tengelyek
+        ctx.StrokeStyle <- "#555"
+        ctx.BeginPath()
+        ctx.MoveTo(0.,centerY)
+        ctx.LineTo(600.,centerY)
+        ctx.MoveTo(centerX,0.)
+        ctx.LineTo(centerX,600.)
+        ctx.Stroke()
+
+        // 🟢 rajzolás
+        ctx.StrokeStyle <- "lime"
+        ctx.LineWidth <- 2.0
+
+        let mutable prev = (0.0,0.0)
+
+        let rec loop i =
+            if i < cmds.Length then
+                match cmds.[i] with
+
+                // G0
+                | Rapid(x,y) ->
+                    prev <- (x,y)
+                    loop (i+1)
+
+                // G1
+                | Line(x,y) ->
+                    let x1,y1 = transform prev
+                    let x2,y2 = transform (x,y)
+
+                    ctx.BeginPath()
+                    ctx.MoveTo(x1,y1)
+                    ctx.LineTo(x2,y2)
+                    ctx.Stroke()
+
+                    prev <- (x,y)
+                    loop (i+1)
+
+                // G2 (ív)
+                | ArcCW(x,y) ->
+                    if i >= 1 && i+1 < cmds.Length then
+                        let p1 = prev
+                        let p2 = (x,y)
+                        let p3 =
+                            match cmds.[i+1] with
+                            | ArcCW(x3,y3) -> (x3,y3)
+                            | _ -> (x,y)
+
+                        match circleFrom3Points p1 p2 p3 with
+                        | Some(cx,cy,r) ->
+
+                            let (tcx,tcy) = transform (cx,cy)
+                            let (sx,sy) = transform p1
+                            let (ex,ey) = transform p2
+
+                            let startAng = atan2 (sy - tcy) (sx - tcx)
+                            let endAng   = atan2 (ey - tcy) (ex - tcx)
+
+                            ctx.BeginPath()
+                            ctx.Arc(tcx,tcy,r*scale,startAng,endAng,true) // CW
+                            ctx.Stroke()
+
+                        | None -> ()
+
+                    prev <- (x,y)
+                    loop (i+1)
+
+        loop 0
     let computeDirections (lines: Parser.GCodeLine[]) =
         lines
         |> Array.pairwise
@@ -162,35 +287,51 @@ module Client =
         if p = Analyzer then
             div [] [
                 h2 [] [ text "Analyzer" ]
+                div [ attr.``class`` "flex flex-col gap-6" ] [
+                    canvas [
+                        attr.id "compassCanvas"
+                        attr.width "600"
+                        attr.height "600"
 
-                canvas [
-                    attr.id "compassCanvas"
-                    attr.width "600"
-                    attr.height "600"
+                        on.afterRender (fun el ->
+                            let canvas = el :?> HTMLCanvasElement
 
-                    on.afterRender (fun el ->
-                        let canvas = el :?> HTMLCanvasElement
+                            canvas.AddEventListener("wheel", fun (ev: Dom.Event)  ->
+                                let e = ev :?> Dom.WheelEvent
+                                e.PreventDefault()
 
-                        canvas.AddEventListener("wheel", fun (ev: Dom.Event)  ->
-                            let e = ev :?> Dom.WheelEvent
-                            e.PreventDefault()
+                                let factor =
+                                    if e.DeltaY < 0 then 1.1 else 0.9
 
-                            let factor =
-                                if e.DeltaY < 0 then 1.1 else 0.9
+                                zoomVar.Value <- zoomVar.Value * factor
+                            )
 
-                            zoomVar.Value <- zoomVar.Value * factor
+                            View.Map2 (fun dirs zoom -> dirs) directionsVar.View zoomVar.View
+                            |> View.Sink (fun dirs ->
+                                if dirs.Length > 0 then
+                                    drawCompass canvas dirs
+                            )
+
+                          
                         )
+                    ] []
+                    canvas [
+                        attr.id "pathCanvas"
+                        attr.width "600"
+                        attr.height "600"
 
-                        View.Map2 (fun dirs zoom -> dirs) directionsVar.View zoomVar.View
-                        |> View.Sink (fun dirs ->
-                            if dirs.Length > 0 then
-                                 drawCompass canvas dirs
+                        on.afterRender (fun el ->
+                            let canvas = el :?> HTMLCanvasElement
+
+                            gcodeVar.View
+                            |> View.Sink (fun cmds ->
+                                if cmds.Length > 0 then
+                                    drawGCodeReal canvas cmds
+                            )
                         )
-
-                        JS.Global?console?log("RAJZOLTAM")
-                    )
-                ] []
-            ] 
+                    ] []
+                ]
+            ]
         else Doc.Empty
     )
 
@@ -213,6 +354,18 @@ module Client =
                     let dirs = computeDirections parsed
 
                     directionsVar.Value <- dirs
+
+                    let cmds =
+                        parsed
+                        |> Array.choose (fun l ->
+                            match l.Cmd, l.X, l.Y with
+                            | "G0", Some x, Some y -> Some (Rapid(x,y))
+                            | "G1", Some x, Some y -> Some (Line(x,y))
+                            | "G2", Some x, Some y -> Some (ArcCW(x,y))
+                            | _ -> None
+                        )
+
+                    gcodeVar.Value <- cmds
 
                     JS.Global?console?log(dirs)
 
