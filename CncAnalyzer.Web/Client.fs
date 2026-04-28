@@ -8,6 +8,7 @@ open WebSharper.UI.Html
 open WebSharper.JavaScript
 open CncAnalyzer.Web.Parser
 open WebSharper.JavaScript.Dom
+open CncAnalyzer.Web.Server
 
 [<JavaScript>]
 module Client =
@@ -336,12 +337,17 @@ module Client =
                     button [
                         attr.``class`` "px-4 py-2 bg-green-600 rounded"
                         on.click (fun _ _ ->
-                            let name = JS.Document.GetElementById("nameInput")?value
-                            let turning = JS.Document.GetElementById("authorInput")?value
+                            async {
+                                let name = JS.Document.GetElementById("nameInput")?value
+                                let turning = JS.Document.GetElementById("authorInput")?value
+                                let imagePath = "images/path.png"
 
-                            JS.Global?console?log("SAVE:", name, turning)
+                                do! CncAnalyzer.Web.Server.SaveCncRpc
 
-                            // 👉 ide jön majd API hívás
+                                JS.Global?console?log("SAVE:", name, turning)
+                                JS.Global?console?log("MENTVE!")
+                            } |> Async.StartImmediate
+                            
                         )
                     ] [ text "Mentés" ]
                 ]

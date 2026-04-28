@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <Compile Include="Parser.fs" />
+    <Compile Include="server.fs" />
     <Compile Include="Client.fs" />
     <Compile Include="Startup.fs" />
     <None Include="package.json" />
@@ -15,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.7" />
     <PackageReference Include="WebSharper" Version="10.1.0.667" />    
     <PackageReference Include="WebSharper.FSharp" Version="10.1.0.667" />
     <PackageReference Include="WebSharper.UI" Version="10.1.0.667" />
