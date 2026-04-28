@@ -37,7 +37,7 @@ module Client =
     }
     let showFormVar = Var.Create false
     let nameVar = Var.Create ""
-    let authorVar = Var.Create ""
+    let turningVar = Var.Create ""
     let saveCanvasAsImage (canvasId: string) =
         let canvas = JS.Document.GetElementById(canvasId) :?> HTMLCanvasElement
         let dataUrl = canvas.ToDataURL("image/png")
@@ -329,17 +329,17 @@ module Client =
                     ] nameVar
 
                     Doc.InputType.Text [
-                        attr.placeholder "Készítő"
+                        attr.placeholder "Forgácsolás"
                         attr.``class`` "p-2 text-black"
-                    ] authorVar
+                    ] turningVar
 
                     button [
                         attr.``class`` "px-4 py-2 bg-green-600 rounded"
                         on.click (fun _ _ ->
                             let name = JS.Document.GetElementById("nameInput")?value
-                            let author = JS.Document.GetElementById("authorInput")?value
+                            let turning = JS.Document.GetElementById("authorInput")?value
 
-                            JS.Global?console?log("SAVE:", name, author)
+                            JS.Global?console?log("SAVE:", name, turning)
 
                             // 👉 ide jön majd API hívás
                         )
