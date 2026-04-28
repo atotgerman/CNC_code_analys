@@ -6,19 +6,23 @@ function isIDisposable(x){
 }
 function Main(){
   const t=new ProviderBuilder("New_1");
-  const t_1=(t.h.push(EventQ2(t.k, "gohome", () => t.i, () => {
-    currentPage().Set(Home);
+  const t_1=(t.h.push(EventQ2(t.k, "gosave", () => t.i, () => {
+    currentPage().Set(Save);
   })),t);
-  const t_2=(t_1.h.push(EventQ2(t_1.k, "goanalyzer", () => t_1.i, () => {
-    currentPage().Set(Analyzer);
+  const t_2=(t_1.h.push(EventQ2(t_1.k, "gohome", () => t_1.i, () => {
+    currentPage().Set(Home);
   })),t_1);
-  const this_1=(t_2.h.push(EventQ2(t_2.k, "goupload", () => t_2.i, () => {
+  const t_3=(t_2.h.push(EventQ2(t_2.k, "goanalyzer", () => t_2.i, () => {
+    currentPage().Set(Analyzer);
+  })),t_2);
+  const this_1=(t_3.h.push(EventQ2(t_3.k, "goupload", () => t_3.i, () => {
     openFileDialog();
     currentPage().Set(Upload);
-  })),t_2);
+  })),t_3);
   const this_2=(this_1.h.push(new Elt("homeview", homeDoc())),this_1);
   const this_3=(this_2.h.push(new Elt("analyzerview", analyzerDoc())),this_2);
-  const b=(this_3.h.push(new Elt("uploadview", uploadDoc())),this_3);
+  const this_4=(this_3.h.push(new Elt("uploadview", uploadDoc())),this_3);
+  const b=(this_4.h.push(new Elt("saveview", saveDoc())),this_4);
   const p=CompleteHoles(b.k, b.h, []);
   const i=new TemplateInstance(p[1], main(p[0]));
   let _1=(b.i=i,i);
@@ -26,6 +30,9 @@ function Main(){
   LoadLocalTemplates("");
   Doc.RunById("main", _2);
   initFileUpload();
+}
+function saveDoc(){
+  return _c.saveDoc;
 }
 function uploadDoc(){
   return _c.uploadDoc;
@@ -105,6 +112,12 @@ function directionsVar(){
 }
 function gcodeVar(){
   return _c.gcodeVar;
+}
+function nameVar(){
+  return _c.nameVar;
+}
+function authorVar(){
+  return _c.authorVar;
 }
 function zoomVar(){
   return _c.zoomVar;
@@ -306,6 +319,12 @@ function saveCanvasAsImage(canvasId){
   link.download=canvasId+".png";
   return link.click();
 }
+function toggleForm(){
+  showFormVar().Set(!showFormVar().Get());
+}
+function showFormVar(){
+  return _c.showFormVar;
+}
 function offsetVar(){
   return _c.offsetVar;
 }
@@ -464,6 +483,7 @@ function CompleteHoles(key, filledHoles, vars){
   }, vars)), {$:0, $0:allVars}];
 }
 class Var extends Object_1 { }
+let Save={$:3};
 let Home={$:0};
 let Analyzer={$:1};
 let Upload={$:2};
@@ -646,9 +666,13 @@ let _c=Lazy((_i) => class $StartupCode_Client {
   static uploadDoc;
   static analyzerDoc;
   static homeDoc;
+  static saveDoc;
   static currentPage;
   static directionsVar;
   static offsetVar;
+  static authorVar;
+  static nameVar;
+  static showFormVar;
   static fileContent;
   static gcodeVar;
   static zoomVar;
@@ -656,9 +680,17 @@ let _c=Lazy((_i) => class $StartupCode_Client {
     this.zoomVar=_c_1.Create_1(1);
     this.gcodeVar=_c_1.Create_1([]);
     this.fileContent=_c_1.Create_1("");
+    this.showFormVar=_c_1.Create_1(false);
+    this.nameVar=_c_1.Create_1("");
+    this.authorVar=_c_1.Create_1("");
     this.offsetVar=_c_1.Create_1([0, 0]);
     this.directionsVar=_c_1.Create_1([]);
     this.currentPage=_c_1.Create_1(Home);
+    this.saveDoc=Doc.BindView((p) => p.$===3?Doc.Element("div", [Attr.Create("class", "p-6 flex flex-col gap-4")], [Doc.Element("h2", [], [Doc.TextNode("Mentés adatbázisba")]), Doc.Input([Attr.Create("placeholder", "Név"), Attr.Create("class", "p-2 text-black")], nameVar()), Doc.Input([Attr.Create("placeholder", "Készít\u0151"), Attr.Create("class", "p-2 text-black")], authorVar()), Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-green-600 rounded"), Attr.HandlerImpl("click", () =>() => {
+      const name=globalThis.document.getElementById("nameInput").value;
+      const author=globalThis.document.getElementById("authorInput").value;
+      return globalThis.console.log(["SAVE:", name, author]);
+    })], [Doc.TextNode("Mentés")])]):Doc.Empty, currentPage().View);
     this.homeDoc=Doc.BindView((p) => p.$===0?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Home")])]):Doc.Empty, currentPage().View);
     this.analyzerDoc=Doc.BindView((p) => p.$===1?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Analyzer")]), Doc.Element("div", [Attr.Create("class", "flex flex-col gap-6")], [Doc.Element("canvas", [Attr.Create("id", "compassCanvas"), Attr.Create("width", "600"), Attr.Create("height", "600"), Attr.A4((el) => {
       el.addEventListener("wheel", (ev) => {
@@ -673,7 +705,7 @@ let _c=Lazy((_i) => class $StartupCode_Client {
       Sink((cmds) => {
         if(length(cmds)>0)drawGCodeReal(el, cmds);
       }, Map2((_1) => _1, gcodeVar().View, zoomVar().View));
-    })], []), Doc.Element("div", [Attr.Create("class", "flex gap-4 pt-4")], [Doc.EmbedView(Map((cmds) => length(cmds)>0?Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-green-600 hover:bg-green-500 rounded"), Attr.HandlerImpl("click", () => saveCanvasAsImage("pathCanvas"))], [Doc.TextNode("Save Path as PNG")]):Doc.Empty, gcodeVar().View)), Doc.EmbedView(Map((dirs) => length(dirs)>0?Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded"), Attr.HandlerImpl("click", () => saveCanvasAsImage("compassCanvas"))], [Doc.TextNode("Save Compass as PNG")]):Doc.Empty, directionsVar().View))])])]):Doc.Empty, currentPage().View);
+    })], []), Doc.Element("div", [Attr.Create("class", "flex gap-4 pt-4")], [Doc.EmbedView(Map((cmds) => length(cmds)>0?Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-green-600 hover:bg-green-500 rounded"), Attr.HandlerImpl("click", () => saveCanvasAsImage("pathCanvas"))], [Doc.TextNode("Save Path as PNG")]):Doc.Empty, gcodeVar().View)), Doc.EmbedView(Map((dirs) => length(dirs)>0?Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded"), Attr.HandlerImpl("click", () => saveCanvasAsImage("compassCanvas"))], [Doc.TextNode("Save Compass as PNG")]):Doc.Empty, directionsVar().View)), Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded"), Attr.HandlerImpl("click", () =>() => toggleForm())], [Doc.TextView(Map((v) => v?"Bezár":"Mentés adatbázisba", showFormVar().View))])])])]):Doc.Empty, currentPage().View);
     this.uploadDoc=Doc.BindView((p) => p.$===2?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Upload CNC file")])]):Doc.Empty, currentPage().View);
   }
 });
@@ -1336,6 +1368,9 @@ class Doc extends Object_1 {
   static TextNode(v){
     return Doc.Mk(TextNodeDoc(globalThis.document.createTextNode(v)), Const());
   }
+  static Input(attr_1, var_1){
+    return Doc.InputInternal("input", () => append(attr_1, [Value(var_1)]));
+  }
   static Mk(node, updates){
     return new Doc(node, updates);
   }
@@ -1357,14 +1392,18 @@ class Doc extends Object_1 {
     const c=Doc.Concat(children);
     return Elt_1.New(globalThis.document.createElement(name), a, c);
   }
-  static Concat(xs){
-    return TreeReduce(Doc.Empty, Doc.Append, ofSeqNonCopying(xs));
+  static InputInternal(elemTy, attr_1){
+    const el=globalThis.document.createElement(elemTy);
+    return Elt_1.New(el, Attr.Concat(attr_1(el)), Doc.Empty);
   }
   static TextView(txt){
     const node=CreateTextNode();
     return Doc.Mk(TextDoc(node), Map((t) => {
       UpdateTextNode(node, t);
     }, txt));
+  }
+  static Concat(xs){
+    return TreeReduce(Doc.Empty, Doc.Append, ofSeqNonCopying(xs));
   }
   static Append(a, b){
     return Doc.Mk(AppendDoc(a.docNode, b.docNode), Map2Unit(a.updates, b.updates));
@@ -1919,23 +1958,6 @@ function iter_1(p, s){
 function collect(f, s){
   return concat_1(map_1(f, s));
 }
-function max_1(s){
-  const e=Get(s);
-  try {
-    if(!e.MoveNext())seqEmpty();
-    let m=e.Current;
-    while(e.MoveNext())
-      {
-        const x=e.Current;
-        if(Compare(x, m)===1)m=x;
-      }
-    return m;
-  }
-  finally {
-    const _1=e;
-    if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
-  }
-}
 function concat_1(ss){
   return{GetEnumerator:() => {
     const outerE=Get(ss);
@@ -1975,8 +1997,22 @@ function concat_1(ss){
 function init_1(n, f){
   return take(n, initInfinite(f));
 }
-function seqEmpty(){
-  return FailWith("The input sequence was empty.");
+function max_1(s){
+  const e=Get(s);
+  try {
+    if(!e.MoveNext())seqEmpty();
+    let m=e.Current;
+    while(e.MoveNext())
+      {
+        const x=e.Current;
+        if(Compare(x, m)===1)m=x;
+      }
+    return m;
+  }
+  finally {
+    const _1=e;
+    if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
+  }
 }
 function take(n, s){
   n<0?nonNegative():void 0;
@@ -1997,6 +2033,9 @@ function take(n, s){
 }
 function forall_1(p, s){
   return!exists_1((x) =>!p(x), s);
+}
+function seqEmpty(){
+  return FailWith("The input sequence was empty.");
 }
 function exists_1(p, s){
   const e=Get(s);
@@ -2548,7 +2587,7 @@ class Attr {
   $1;
 }
 function scheduler(){
-  return _c_6.scheduler;
+  return _c_7.scheduler;
 }
 function Delay(mk){
   return(c) => {
@@ -2581,7 +2620,7 @@ function Bind_1(r, f){
   });
 }
 function Zero(){
-  return _c_6.Zero;
+  return _c_7.Zero;
 }
 function Start(c, ctOpt){
   const d=(defCTS())[0];
@@ -2604,7 +2643,7 @@ function checkCancel(r){
   };
 }
 function defCTS(){
-  return _c_6.defCTS;
+  return _c_7.defCTS;
 }
 function UncaughtAsyncError(e){
   console.log("WebSharper: Uncaught asynchronous exception", e);
@@ -2751,6 +2790,17 @@ function PerformSyncUpdate(childrenOnly, st, doc){
   SyncElemNode(childrenOnly, st.Top);
   st.PreviousNodes=cur;
 }
+function CreateTextNode(){
+  return{
+    Text:globalThis.document.createTextNode(""), 
+    Dirty:false, 
+    Value:""
+  };
+}
+function UpdateTextNode(n, t){
+  n.Value=t;
+  n.Dirty=true;
+}
 function InsertBeforeDelim(afterDelim, doc){
   const p=afterDelim.parentNode;
   const before=globalThis.document.createTextNode("");
@@ -2797,17 +2847,6 @@ function SyncElemNode(childrenOnly, el){
   !childrenOnly?SyncElement(el):void 0;
   Sync(el.Children);
   AfterRender(el);
-}
-function CreateTextNode(){
-  return{
-    Text:globalThis.document.createTextNode(""), 
-    Dirty:false, 
-    Value:""
-  };
-}
-function UpdateTextNode(n, t){
-  n.Value=t;
-  n.Dirty=true;
 }
 function LinkPrevElement(el, children){
   InsertDoc(el.parentNode, children, el);
@@ -3011,76 +3050,6 @@ function Waiting(Item1, Item2){
     $1:Item2
   };
 }
-function ParseHTMLIntoFakeRoot(elem){
-  const root=globalThis.document.createElement("div");
-  if(!rhtml().test(elem)){
-    root.appendChild(globalThis.document.createTextNode(elem));
-    return root;
-  }
-  else {
-    const m=rtagName().exec(elem);
-    const tag=Equals(m, null)?"":get(m, 1).toLowerCase();
-    const w=(wrapMap())[tag];
-    const p=w?w:defaultWrap();
-    root.innerHTML=p[1]+elem.replace(rxhtmlTag(), "<$1></$2>")+p[2];
-    function unwrap(elt, a){
-      while(true)
-        {
-          if(a===0)return elt;
-          else {
-            const i=a;
-            elt=elt.lastChild;
-            a=i-1;
-          }
-        }
-    }
-    return(((a) => {
-      const _1=a;
-      return(_2) => unwrap(_1, _2);
-    })(root))(p[0]);
-  }
-}
-function ChildrenArray(element){
-  const a=[];
-  for(let i=0, _1=element.childNodes.length-1;i<=_1;i++)a.push(element.childNodes[i]);
-  return a;
-}
-function rhtml(){
-  return _c_7.rhtml;
-}
-function wrapMap(){
-  return _c_7.wrapMap;
-}
-function defaultWrap(){
-  return _c_7.defaultWrap;
-}
-function rxhtmlTag(){
-  return _c_7.rxhtmlTag;
-}
-function rtagName(){
-  return _c_7.rtagName;
-}
-function IterSelector(el, selector, f){
-  const l=el.querySelectorAll(selector);
-  for(let i=0, _1=l.length-1;i<=_1;i++)f(l[i]);
-}
-function IterSelectorDoc(selector, f){
-  const l=globalThis.document.querySelectorAll(selector);
-  for(let i=0, _1=l.length-1;i<=_1;i++)f(l[i]);
-}
-function InsertAt(parent, pos, node){
-  let _1;
-  if(node.parentNode===parent){
-    const m=node.nextSibling;
-    let _2=Equals(m, null)?null:m;
-    _1=pos===_2;
-  }
-  else _1=false;
-  if(!_1)parent.insertBefore(node, pos);
-}
-function RemoveNode(parent, el){
-  if(el.parentNode===parent)parent.removeChild(el);
-}
 function Insert(elem, tree){
   const nodes=[];
   const oar=[];
@@ -3122,7 +3091,7 @@ function Dynamic(view, set_1){
   return Attr.A1(new DynamicAttrNode(view, set_1));
 }
 function EmptyAttr(){
-  return _c_9.EmptyAttr;
+  return _c_6.EmptyAttr;
 }
 function HasExitAnim(attr_1){
   const flag=2;
@@ -3164,6 +3133,112 @@ function Sync_1(elem, dyn){
 }
 function SetFlags(a, f){
   a.flags=f;
+}
+function ParseHTMLIntoFakeRoot(elem){
+  const root=globalThis.document.createElement("div");
+  if(!rhtml().test(elem)){
+    root.appendChild(globalThis.document.createTextNode(elem));
+    return root;
+  }
+  else {
+    const m=rtagName().exec(elem);
+    const tag=Equals(m, null)?"":get(m, 1).toLowerCase();
+    const w=(wrapMap())[tag];
+    const p=w?w:defaultWrap();
+    root.innerHTML=p[1]+elem.replace(rxhtmlTag(), "<$1></$2>")+p[2];
+    function unwrap(elt, a){
+      while(true)
+        {
+          if(a===0)return elt;
+          else {
+            const i=a;
+            elt=elt.lastChild;
+            a=i-1;
+          }
+        }
+    }
+    return(((a) => {
+      const _1=a;
+      return(_2) => unwrap(_1, _2);
+    })(root))(p[0]);
+  }
+}
+function ChildrenArray(element){
+  const a=[];
+  for(let i=0, _1=element.childNodes.length-1;i<=_1;i++)a.push(element.childNodes[i]);
+  return a;
+}
+function rhtml(){
+  return _c_8.rhtml;
+}
+function wrapMap(){
+  return _c_8.wrapMap;
+}
+function defaultWrap(){
+  return _c_8.defaultWrap;
+}
+function rxhtmlTag(){
+  return _c_8.rxhtmlTag;
+}
+function rtagName(){
+  return _c_8.rtagName;
+}
+function IterSelector(el, selector, f){
+  const l=el.querySelectorAll(selector);
+  for(let i=0, _1=l.length-1;i<=_1;i++)f(l[i]);
+}
+function IterSelectorDoc(selector, f){
+  const l=globalThis.document.querySelectorAll(selector);
+  for(let i=0, _1=l.length-1;i<=_1;i++)f(l[i]);
+}
+function InsertAt(parent, pos, node){
+  let _1;
+  if(node.parentNode===parent){
+    const m=node.nextSibling;
+    let _2=Equals(m, null)?null:m;
+    _1=pos===_2;
+  }
+  else _1=false;
+  if(!_1)parent.insertBefore(node, pos);
+}
+function RemoveNode(parent, el){
+  if(el.parentNode===parent)parent.removeChild(el);
+}
+function Value(var_1){
+  return ValueWith(StringApply(), var_1);
+}
+function ValueWith(bind, var_1){
+  const p=bind(var_1);
+  return AppendTree(Attr.A3(p[0]), DynamicCustom(p[1], p[2]));
+}
+function Handler(name, callback){
+  return Attr.A3((el) => {
+    el.addEventListener(name, (d) =>(callback(el))(d), false);
+  });
+}
+function OnAfterRender(callback){
+  return Attr.A4(callback);
+}
+function Dynamic_1(name, view){
+  return Dynamic(view, (el) =>(v) => el.setAttribute(name, v));
+}
+function DynamicCustom(set_1, view){
+  return Dynamic(view, set_1);
+}
+function FloatValueUnchecked(var_1){
+  return ValueWith(FloatApplyUnchecked(), var_1);
+}
+function Checked(var_1){
+  return ValueWith(BoolCheckedApply(), var_1);
+}
+function DateTimeValue(var_1){
+  return ValueWith(DateTimeApplyUnchecked(), var_1);
+}
+function FileValue(var_1){
+  return ValueWith(FileApplyUnchecked(), var_1);
+}
+function StringListValue(var_1){
+  return ValueWith(StringListApply(), var_1);
 }
 function Obsolete(sn){
   let _1;
@@ -3450,6 +3525,113 @@ function New_2(DynElem, DynFlags, DynNodes, OnAfterRender_1){
   SetOptional(_1, "OnAfterRender", OnAfterRender_1);
   return _1;
 }
+function StringApply(){
+  return _c_6.StringApply;
+}
+function ApplyValue(get_1, set_1, var_1){
+  let expectedValue;
+  expectedValue=null;
+  return[(el) => {
+    const onChange=() => {
+      var_1.UpdateMaybe((v) => {
+        let _1;
+        expectedValue=get_1(el);
+        return expectedValue!=null&&expectedValue.$==1&&(!Equals(expectedValue.$0, v)&&(_1=[expectedValue, expectedValue.$0],true))?_1[0]:null;
+      });
+    };
+    el.addEventListener("change", onChange);
+    el.addEventListener("input", onChange);
+    el.addEventListener("keypress", onChange);
+  }, (x) => {
+    const _1=set_1(x);
+    return(_2) => _2==null?null:_1(_2.$0);
+  }, Map((v) => {
+    let _1;
+    return expectedValue!=null&&expectedValue.$==1&&(Equals(expectedValue.$0, v)&&(_1=expectedValue.$0,true))?null:Some(v);
+  }, var_1.View)];
+}
+function StringSet(){
+  return _c_6.StringSet;
+}
+function StringGet(){
+  return _c_6.StringGet;
+}
+function StringListSet(){
+  return _c_6.StringListSet;
+}
+function StringListGet(){
+  return _c_6.StringListGet;
+}
+function DateTimeSetUnchecked(){
+  return _c_6.DateTimeSetUnchecked;
+}
+function DateTimeGetUnchecked(){
+  return _c_6.DateTimeGetUnchecked;
+}
+function FileApplyValue(get_1, set_1, var_1){
+  let expectedValue;
+  expectedValue=null;
+  return[(el) => {
+    el.addEventListener("change", () => {
+      var_1.UpdateMaybe((v) => {
+        let _1;
+        expectedValue=get_1(el);
+        return expectedValue!=null&&expectedValue.$==1&&(expectedValue.$0!==v&&(_1=[expectedValue, expectedValue.$0],true))?_1[0]:null;
+      });
+    });
+  }, (x) => {
+    const _1=set_1(x);
+    return(_2) => _2==null?null:_1(_2.$0);
+  }, Map((v) => {
+    let _1;
+    return expectedValue!=null&&expectedValue.$==1&&(Equals(expectedValue.$0, v)&&(_1=expectedValue.$0,true))?null:Some(v);
+  }, var_1.View)];
+}
+function FileSetUnchecked(){
+  return _c_6.FileSetUnchecked;
+}
+function FileGetUnchecked(){
+  return _c_6.FileGetUnchecked;
+}
+function IntSetUnchecked(){
+  return _c_6.IntSetUnchecked;
+}
+function IntGetUnchecked(){
+  return _c_6.IntGetUnchecked;
+}
+function IntSetChecked(){
+  return _c_6.IntSetChecked;
+}
+function IntGetChecked(){
+  return _c_6.IntGetChecked;
+}
+function FloatSetUnchecked(){
+  return _c_6.FloatSetUnchecked;
+}
+function FloatGetUnchecked(){
+  return _c_6.FloatGetUnchecked;
+}
+function FloatSetChecked(){
+  return _c_6.FloatSetChecked;
+}
+function FloatGetChecked(){
+  return _c_6.FloatGetChecked;
+}
+function FloatApplyUnchecked(){
+  return _c_6.FloatApplyUnchecked;
+}
+function BoolCheckedApply(){
+  return _c_6.BoolCheckedApply;
+}
+function DateTimeApplyUnchecked(){
+  return _c_6.DateTimeApplyUnchecked;
+}
+function FileApplyUnchecked(){
+  return _c_6.FileApplyUnchecked;
+}
+function StringListApply(){
+  return _c_6.StringListApply;
+}
 class Scheduler extends Object_1 {
   idle;
   robin;
@@ -3561,42 +3743,6 @@ class Event_1 extends TemplateHole {
   get Name(){
     return this.name;
   }
-}
-function Handler(name, callback){
-  return Attr.A3((el) => {
-    el.addEventListener(name, (d) =>(callback(el))(d), false);
-  });
-}
-function OnAfterRender(callback){
-  return Attr.A4(callback);
-}
-function Dynamic_1(name, view){
-  return Dynamic(view, (el) =>(v) => el.setAttribute(name, v));
-}
-function Value(var_1){
-  return ValueWith(StringApply(), var_1);
-}
-function FloatValueUnchecked(var_1){
-  return ValueWith(FloatApplyUnchecked(), var_1);
-}
-function Checked(var_1){
-  return ValueWith(BoolCheckedApply(), var_1);
-}
-function DateTimeValue(var_1){
-  return ValueWith(DateTimeApplyUnchecked(), var_1);
-}
-function FileValue(var_1){
-  return ValueWith(FileApplyUnchecked(), var_1);
-}
-function StringListValue(var_1){
-  return ValueWith(StringListApply(), var_1);
-}
-function ValueWith(bind, var_1){
-  const p=bind(var_1);
-  return AppendTree(Attr.A3(p[0]), DynamicCustom(p[1], p[2]));
-}
-function DynamicCustom(set_1, view){
-  return Dynamic(view, set_1);
 }
 class AfterRender_1 extends TemplateHole {
   name;
@@ -3805,7 +3951,7 @@ function Intersect(a, a_1){
   return NodeSet(Intersect_1(a.$0, a_1.$0));
 }
 function UseAnimations(){
-  return _c_8.UseAnimations;
+  return _c_9.UseAnimations;
 }
 function Actions(a){
   return ConcatActions(choose((a_1) => a_1.$==1?Some(a_1.$0):null, ToArray_1(a.$0)));
@@ -3869,181 +4015,9 @@ let _c_5=Lazy((_i) => class $StartupCode_Abbrev {
     this.counter=0;
   }
 });
-let _c_6=Lazy((_i) => class $StartupCode_Concurrency {
+let _c_6=Lazy((_i) => class Client {
   static {
     _c_6=_i(this);
-  }
-  static GetCT;
-  static Zero;
-  static defCTS;
-  static scheduler;
-  static noneCT;
-  static {
-    this.noneCT=New_4(false, []);
-    this.scheduler=new Scheduler();
-    this.defCTS=[new CancellationTokenSource()];
-    this.Zero=Return();
-    this.GetCT=(c) => {
-      c.k(Ok(c.ct));
-    };
-  }
-});
-let _c_7=Lazy((_i) => class $StartupCode_DomUtility {
-  static {
-    _c_7=_i(this);
-  }
-  static defaultWrap;
-  static wrapMap;
-  static rhtml;
-  static rtagName;
-  static rxhtmlTag;
-  static {
-    this.rxhtmlTag=new RegExp("<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\\w:]+)[^>]*)\\/>", "gi");
-    this.rtagName=new RegExp("<([\\w:]+)");
-    this.rhtml=new RegExp("<|&#?\\w+;");
-    const table=[1, "<table>", "</table>"];
-    let _1=Object.fromEntries([["option", [1, "<select multiple='multiple'>", "</select>"]], ["legend", [1, "<fieldset>", "</fieldset>"]], ["area", [1, "<map>", "</map>"]], ["param", [1, "<object>", "</object>"]], ["thead", table], ["tbody", table], ["tfoot", table], ["tr", [2, "<table><tbody>", "</tbody></table>"]], ["col", [2, "<table><colgroup>", "</colgoup></table>"]], ["td", [3, "<table><tbody><tr>", "</tr></tbody></table>"]]]);
-    this.wrapMap=_1;
-    this.defaultWrap=[0, "", ""];
-  }
-});
-let _c_8=Lazy((_i) => class $StartupCode_Animation {
-  static {
-    _c_8=_i(this);
-  }
-  static UseAnimations;
-  static CubicInOut;
-  static {
-    this.CubicInOut=Easing.Custom((t) => {
-      const t2=t*t;
-      return 3*t2-2*(t2*t);
-    });
-    this.UseAnimations=true;
-  }
-});
-function Append_1(x, y){
-  return x.$==0?y:y.$==0?x:{
-    $:2, 
-    $0:x, 
-    $1:y
-  };
-}
-function ToArray_1(xs){
-  const out=[];
-  function loop(xs_1){
-    while(true)
-      {
-        if(xs_1.$==1)return out.push(xs_1.$0);
-        else if(xs_1.$==2){
-          const y=xs_1.$1;
-          const x=xs_1.$0;
-          loop(x);
-          xs_1=y;
-        }
-        else return xs_1.$==3?iter((v) => {
-          out.push(v);
-        }, xs_1.$0):null;
-      }
-  }
-  loop(xs);
-  return out.slice(0);
-}
-function Concat_1(xs){
-  const x=ofSeqNonCopying(xs);
-  return TreeReduce(Empty_1(), Append_1, x);
-}
-function Empty_1(){
-  return _c_10.Empty;
-}
-function head_1(l){
-  return l.$==1?l.$0:listEmpty();
-}
-function tail(l){
-  return l.$==1?l.$1:listEmpty();
-}
-function listEmpty(){
-  return FailWith("The input list was empty.");
-}
-function Clear(a){
-  a.splice(0, length(a));
-}
-function New_4(IsCancellationRequested, Registrations){
-  return{c:IsCancellationRequested, r:Registrations};
-}
-class CancellationTokenSource extends Object_1 {
-  init;
-  c;
-  pending;
-  r;
-  constructor(){
-    super();
-    this.c=false;
-    this.pending=null;
-    this.r=[];
-    this.init=1;
-  }
-}
-function New_5(k, ct){
-  return{k:k, ct:ct};
-}
-function Ok(Item){
-  return{$:0, $0:Item};
-}
-function No(Item){
-  return{$:1, $0:Item};
-}
-function Cc(Item){
-  return{$:2, $0:Item};
-}
-class DynamicAttrNode extends Object_1 {
-  push;
-  value;
-  dirty;
-  updates;
-  get NChanged(){
-    return this.updates;
-  }
-  NGetExitAnim(parent){
-    return get_Empty();
-  }
-  NGetEnterAnim(parent){
-    return get_Empty();
-  }
-  NGetChangeAnim(parent){
-    return get_Empty();
-  }
-  NSync(parent){
-    if(this.dirty){
-      (this.push(parent))(this.value);
-      this.dirty=false;
-    }
-  }
-  constructor(view, push){
-    super();
-    this.push=push;
-    this.value=void 0;
-    this.dirty=false;
-    this.updates=Map((x) => {
-      this.value=x;
-      this.dirty=true;
-    }, view);
-  }
-}
-class KeyNotFoundException extends Error {
-  constructor(i, _1){
-    if(i=="New"){
-      i="New_1";
-      _1="The given key was not present in the dictionary.";
-    }
-    if(i=="New_1"){
-      const message=_1;
-      super(message);
-    }
-  }
-}
-let _c_9=Lazy((_i) => class Client {
-  static {
-    _c_9=_i(this);
   }
   static FloatApplyChecked;
   static FloatGetChecked;
@@ -4191,6 +4165,202 @@ let _c_9=Lazy((_i) => class Client {
     this.FloatApplyChecked=(v) => ApplyValue(g_7, s_7, v);
   }
 });
+let _c_7=Lazy((_i) => class $StartupCode_Concurrency {
+  static {
+    _c_7=_i(this);
+  }
+  static GetCT;
+  static Zero;
+  static defCTS;
+  static scheduler;
+  static noneCT;
+  static {
+    this.noneCT=New_4(false, []);
+    this.scheduler=new Scheduler();
+    this.defCTS=[new CancellationTokenSource()];
+    this.Zero=Return();
+    this.GetCT=(c) => {
+      c.k(Ok(c.ct));
+    };
+  }
+});
+let _c_8=Lazy((_i) => class $StartupCode_DomUtility {
+  static {
+    _c_8=_i(this);
+  }
+  static defaultWrap;
+  static wrapMap;
+  static rhtml;
+  static rtagName;
+  static rxhtmlTag;
+  static {
+    this.rxhtmlTag=new RegExp("<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\\w:]+)[^>]*)\\/>", "gi");
+    this.rtagName=new RegExp("<([\\w:]+)");
+    this.rhtml=new RegExp("<|&#?\\w+;");
+    const table=[1, "<table>", "</table>"];
+    let _1=Object.fromEntries([["option", [1, "<select multiple='multiple'>", "</select>"]], ["legend", [1, "<fieldset>", "</fieldset>"]], ["area", [1, "<map>", "</map>"]], ["param", [1, "<object>", "</object>"]], ["thead", table], ["tbody", table], ["tfoot", table], ["tr", [2, "<table><tbody>", "</tbody></table>"]], ["col", [2, "<table><colgroup>", "</colgoup></table>"]], ["td", [3, "<table><tbody><tr>", "</tr></tbody></table>"]]]);
+    this.wrapMap=_1;
+    this.defaultWrap=[0, "", ""];
+  }
+});
+let _c_9=Lazy((_i) => class $StartupCode_Animation {
+  static {
+    _c_9=_i(this);
+  }
+  static UseAnimations;
+  static CubicInOut;
+  static {
+    this.CubicInOut=Easing.Custom((t) => {
+      const t2=t*t;
+      return 3*t2-2*(t2*t);
+    });
+    this.UseAnimations=true;
+  }
+});
+function Append_1(x, y){
+  return x.$==0?y:y.$==0?x:{
+    $:2, 
+    $0:x, 
+    $1:y
+  };
+}
+function ToArray_1(xs){
+  const out=[];
+  function loop(xs_1){
+    while(true)
+      {
+        if(xs_1.$==1)return out.push(xs_1.$0);
+        else if(xs_1.$==2){
+          const y=xs_1.$1;
+          const x=xs_1.$0;
+          loop(x);
+          xs_1=y;
+        }
+        else return xs_1.$==3?iter((v) => {
+          out.push(v);
+        }, xs_1.$0):null;
+      }
+  }
+  loop(xs);
+  return out.slice(0);
+}
+function Concat_1(xs){
+  const x=ofSeqNonCopying(xs);
+  return TreeReduce(Empty_1(), Append_1, x);
+}
+function Empty_1(){
+  return _c_10.Empty;
+}
+function head_1(l){
+  return l.$==1?l.$0:listEmpty();
+}
+function tail(l){
+  return l.$==1?l.$1:listEmpty();
+}
+function listEmpty(){
+  return FailWith("The input list was empty.");
+}
+function isBlank(s){
+  return forall_2(IsWhiteSpace, s);
+}
+class CheckedInput {
+  get Input(){
+    return this.$==1?this.$0:this.$==2?this.$0:this.$1;
+  }
+  static Blank(inputText){
+    return Create_1(CheckedInput, {$:2, $0:inputText});
+  }
+  static Invalid(inputText){
+    return Create_1(CheckedInput, {$:1, $0:inputText});
+  }
+  static Valid(value, inputText){
+    return Create_1(CheckedInput, {
+      $:0, 
+      $0:value, 
+      $1:inputText
+    });
+  }
+  $;
+  $0;
+  $1;
+}
+function Clear(a){
+  a.splice(0, length(a));
+}
+function New_4(IsCancellationRequested, Registrations){
+  return{c:IsCancellationRequested, r:Registrations};
+}
+class CancellationTokenSource extends Object_1 {
+  init;
+  c;
+  pending;
+  r;
+  constructor(){
+    super();
+    this.c=false;
+    this.pending=null;
+    this.r=[];
+    this.init=1;
+  }
+}
+function New_5(k, ct){
+  return{k:k, ct:ct};
+}
+function Ok(Item){
+  return{$:0, $0:Item};
+}
+function No(Item){
+  return{$:1, $0:Item};
+}
+function Cc(Item){
+  return{$:2, $0:Item};
+}
+class DynamicAttrNode extends Object_1 {
+  push;
+  value;
+  dirty;
+  updates;
+  get NChanged(){
+    return this.updates;
+  }
+  NGetExitAnim(parent){
+    return get_Empty();
+  }
+  NGetEnterAnim(parent){
+    return get_Empty();
+  }
+  NGetChangeAnim(parent){
+    return get_Empty();
+  }
+  NSync(parent){
+    if(this.dirty){
+      (this.push(parent))(this.value);
+      this.dirty=false;
+    }
+  }
+  constructor(view, push){
+    super();
+    this.push=push;
+    this.value=void 0;
+    this.dirty=false;
+    this.updates=Map((x) => {
+      this.value=x;
+      this.dirty=true;
+    }, view);
+  }
+}
+class KeyNotFoundException extends Error {
+  constructor(i, _1){
+    if(i=="New"){
+      i="New_1";
+      _1="The given key was not present in the dictionary.";
+    }
+    if(i=="New_1"){
+      const message=_1;
+      super(message);
+    }
+  }
+}
 class Easing extends Object_1 {
   transformTime;
   static Custom(f){
@@ -4219,136 +4389,18 @@ function Intersect_1(a, b){
   set_1.IntersectWith(ToArray_2(b));
   return set_1;
 }
-function ApplyValue(get_1, set_1, var_1){
-  let expectedValue;
-  expectedValue=null;
-  return[(el) => {
-    const onChange=() => {
-      var_1.UpdateMaybe((v) => {
-        let _1;
-        expectedValue=get_1(el);
-        return expectedValue!=null&&expectedValue.$==1&&(!Equals(expectedValue.$0, v)&&(_1=[expectedValue, expectedValue.$0],true))?_1[0]:null;
-      });
-    };
-    el.addEventListener("change", onChange);
-    el.addEventListener("input", onChange);
-    el.addEventListener("keypress", onChange);
-  }, (x) => {
-    const _1=set_1(x);
-    return(_2) => _2==null?null:_1(_2.$0);
-  }, Map((v) => {
-    let _1;
-    return expectedValue!=null&&expectedValue.$==1&&(Equals(expectedValue.$0, v)&&(_1=expectedValue.$0,true))?null:Some(v);
-  }, var_1.View)];
+function IsWhiteSpace(c){
+  return c.match(new RegExp("\\s"))!==null;
 }
-function StringSet(){
-  return _c_9.StringSet;
+function TryParse_1(s){
+  const d=Date.parse(s);
+  return isNaN(d)?null:Some(d);
 }
-function StringGet(){
-  return _c_9.StringGet;
-}
-function StringListSet(){
-  return _c_9.StringListSet;
-}
-function StringListGet(){
-  return _c_9.StringListGet;
-}
-function DateTimeSetUnchecked(){
-  return _c_9.DateTimeSetUnchecked;
-}
-function DateTimeGetUnchecked(){
-  return _c_9.DateTimeGetUnchecked;
-}
-function FileApplyValue(get_1, set_1, var_1){
-  let expectedValue;
-  expectedValue=null;
-  return[(el) => {
-    el.addEventListener("change", () => {
-      var_1.UpdateMaybe((v) => {
-        let _1;
-        expectedValue=get_1(el);
-        return expectedValue!=null&&expectedValue.$==1&&(expectedValue.$0!==v&&(_1=[expectedValue, expectedValue.$0],true))?_1[0]:null;
-      });
-    });
-  }, (x) => {
-    const _1=set_1(x);
-    return(_2) => _2==null?null:_1(_2.$0);
-  }, Map((v) => {
-    let _1;
-    return expectedValue!=null&&expectedValue.$==1&&(Equals(expectedValue.$0, v)&&(_1=expectedValue.$0,true))?null:Some(v);
-  }, var_1.View)];
-}
-function FileSetUnchecked(){
-  return _c_9.FileSetUnchecked;
-}
-function FileGetUnchecked(){
-  return _c_9.FileGetUnchecked;
-}
-function IntSetUnchecked(){
-  return _c_9.IntSetUnchecked;
-}
-function IntGetUnchecked(){
-  return _c_9.IntGetUnchecked;
-}
-function IntSetChecked(){
-  return _c_9.IntSetChecked;
-}
-function IntGetChecked(){
-  return _c_9.IntGetChecked;
-}
-function FloatSetUnchecked(){
-  return _c_9.FloatSetUnchecked;
-}
-function FloatGetUnchecked(){
-  return _c_9.FloatGetUnchecked;
-}
-function FloatSetChecked(){
-  return _c_9.FloatSetChecked;
-}
-function FloatGetChecked(){
-  return _c_9.FloatGetChecked;
-}
-function StringApply(){
-  return _c_9.StringApply;
-}
-function FloatApplyUnchecked(){
-  return _c_9.FloatApplyUnchecked;
-}
-function BoolCheckedApply(){
-  return _c_9.BoolCheckedApply;
-}
-function DateTimeApplyUnchecked(){
-  return _c_9.DateTimeApplyUnchecked;
-}
-function FileApplyUnchecked(){
-  return _c_9.FileApplyUnchecked;
-}
-function StringListApply(){
-  return _c_9.StringListApply;
-}
-function isBlank(s){
-  return forall_2(IsWhiteSpace, s);
-}
-class CheckedInput {
-  get Input(){
-    return this.$==1?this.$0:this.$==2?this.$0:this.$1;
-  }
-  static Blank(inputText){
-    return Create_1(CheckedInput, {$:2, $0:inputText});
-  }
-  static Invalid(inputText){
-    return Create_1(CheckedInput, {$:1, $0:inputText});
-  }
-  static Valid(value, inputText){
-    return Create_1(CheckedInput, {
-      $:0, 
-      $0:value, 
-      $1:inputText
-    });
-  }
-  $;
-  $0;
-  $1;
+function TryParse_2(s, min, max_2, r){
+  const x=+s;
+  const ok=x===x-x%1&&x>=min&&x<=max_2;
+  if(ok)r.set(x);
+  return ok;
 }
 function Children(elem, delims){
   let n;
@@ -4434,19 +4486,6 @@ class OperationCanceledException extends Error {
       this.ct=ct_1;
     }
   }
-}
-function IsWhiteSpace(c){
-  return c.match(new RegExp("\\s"))!==null;
-}
-function TryParse_1(s){
-  const d=Date.parse(s);
-  return isNaN(d)?null:Some(d);
-}
-function TryParse_2(s, min, max_2, r){
-  const x=+s;
-  const ok=x===x-x%1&&x>=min&&x<=max_2;
-  if(ok)r.set(x);
-  return ok;
 }
 function Create(f){
   return New_6(false, f, forceLazy);

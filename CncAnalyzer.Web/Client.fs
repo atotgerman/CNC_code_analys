@@ -24,6 +24,7 @@ module Client =
         | Home
         | Analyzer
         | Upload
+        | Save
     
     type Direction = {
         Angle: float
@@ -34,6 +35,9 @@ module Client =
         X: float
         Y: float
     }
+    let showFormVar = Var.Create false
+    let nameVar = Var.Create ""
+    let authorVar = Var.Create ""
     let saveCanvasAsImage (canvasId: string) =
         let canvas = JS.Document.GetElementById(canvasId) :?> HTMLCanvasElement
         let dataUrl = canvas.ToDataURL("image/png")
@@ -309,7 +313,40 @@ module Client =
     )
 
     let currentPage = Var.Create Home
+    let saveDoc =
+        currentPage.View
+        |> Doc.BindView (fun p ->
+            if p = Save then
+                div [ attr.``class`` "p-6 flex flex-col gap-4" ] [
 
+                    h2 [] [ text "Mentés adatbázisba" ]
+
+                    
+
+                    Doc.InputType.Text [
+                        attr.placeholder "Név"
+                        attr.``class`` "p-2 text-black"
+                    ] nameVar
+
+                    Doc.InputType.Text [
+                        attr.placeholder "Készítő"
+                        attr.``class`` "p-2 text-black"
+                    ] authorVar
+
+                    button [
+                        attr.``class`` "px-4 py-2 bg-green-600 rounded"
+                        on.click (fun _ _ ->
+                            let name = JS.Document.GetElementById("nameInput")?value
+                            let author = JS.Document.GetElementById("authorInput")?value
+
+                            JS.Global?console?log("SAVE:", name, author)
+
+                            // 👉 ide jön majd API hívás
+                        )
+                    ] [ text "Mentés" ]
+                ]
+            else Doc.Empty
+        )
     let homeDoc =
         currentPage.View
         |> Doc.BindView (fun p ->
@@ -317,7 +354,8 @@ module Client =
                 div [] [ h2 [] [ text "Home" ] ]
             else Doc.Empty
         )
-
+    let toggleForm () =
+        showFormVar.Value <- not showFormVar.Value
     let analyzerDoc =
         currentPage.View
         |> Doc.BindView (fun p ->
@@ -394,7 +432,18 @@ module Client =
                             else Doc.Empty
                         )
                         |> Doc.EmbedView
+                        button [
+                            attr.``class`` "px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded"
+                            on.click (fun _ _-> toggleForm())
+                    ] [
+                    textView (
+                        showFormVar.View
+                        |> View.Map (fun v -> if v then "Bezár" else "Mentés adatbázisba")
+                    
+                    )
+                    ] 
                     ]
+                    
                 ]
             ]
         else Doc.Empty
@@ -455,6 +504,7 @@ module Client =
         IndexTemplate.Main()
 
             // Menü
+            .GoSave(fun _ -> currentPage.Value <- Save)
             .GoHome(fun _ -> currentPage.Value <- Home)
             .GoAnalyzer(fun _ -> currentPage.Value <- Analyzer)
             .GoUpload(fun _ -> 
@@ -466,6 +516,7 @@ module Client =
             .HomeView(homeDoc)
             .AnalyzerView(analyzerDoc)
             .UploadView(uploadDoc)
+            .SaveView(saveDoc)
             
 
             .Doc()
