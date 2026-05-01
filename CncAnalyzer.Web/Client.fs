@@ -339,13 +339,13 @@ module Client =
                         attr.``class`` "px-4 py-2 bg-green-600 rounded"
                         on.click (fun _ _ ->
                             async {
-                                let name = JS.Document.GetElementById("nameInput")?value
-                                let turning = JS.Document.GetElementById("authorInput")?value
+                                let name = nameVar.Value
+                                let turning= turningVar.Value
                                 
                                 do! SaveCncRpc name turning fileContent.Value
 
-                                //JS.Global?console?log("SAVE:", name, turning)
-                                //JS.Global?console?log("MENTVE!")
+                                JS.Global?console?log("SAVE:", name, turning)
+                                JS.Global?console?log("MENTVE!")
                             } |> Async.StartImmediate
                             
                         )

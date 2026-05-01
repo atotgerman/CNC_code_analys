@@ -116,8 +116,8 @@ function gcodeVar(){
 function nameVar(){
   return _c.nameVar;
 }
-function authorVar(){
-  return _c.authorVar;
+function turningVar(){
+  return _c.turningVar;
 }
 function zoomVar(){
   return _c.zoomVar;
@@ -670,7 +670,7 @@ let _c=Lazy((_i) => class $StartupCode_Client {
   static currentPage;
   static directionsVar;
   static offsetVar;
-  static authorVar;
+  static turningVar;
   static nameVar;
   static showFormVar;
   static fileContent;
@@ -682,15 +682,19 @@ let _c=Lazy((_i) => class $StartupCode_Client {
     this.fileContent=_c_1.Create_1("");
     this.showFormVar=_c_1.Create_1(false);
     this.nameVar=_c_1.Create_1("");
-    this.authorVar=_c_1.Create_1("");
+    this.turningVar=_c_1.Create_1("");
     this.offsetVar=_c_1.Create_1([0, 0]);
     this.directionsVar=_c_1.Create_1([]);
     this.currentPage=_c_1.Create_1(Home);
-    this.saveDoc=Doc.BindView((p) => p.$===3?Doc.Element("div", [Attr.Create("class", "p-6 flex flex-col gap-4")], [Doc.Element("h2", [], [Doc.TextNode("Mentés adatbázisba")]), Doc.Input([Attr.Create("placeholder", "Név"), Attr.Create("class", "p-2 text-black")], nameVar()), Doc.Input([Attr.Create("placeholder", "Készít\u0151"), Attr.Create("class", "p-2 text-black")], authorVar()), Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-green-600 rounded"), Attr.HandlerImpl("click", () =>() => {
-      const name=globalThis.document.getElementById("nameInput").value;
-      const author=globalThis.document.getElementById("authorInput").value;
-      return globalThis.console.log(["SAVE:", name, author]);
-    })], [Doc.TextNode("Mentés")])]):Doc.Empty, currentPage().View);
+    this.saveDoc=Doc.BindView((p) => p.$===3?Doc.Element("div", [Attr.Create("class", "p-6 flex flex-col gap-4")], [Doc.Element("h2", [], [Doc.TextNode("Mentés adatbázisba")]), Doc.Input([Attr.Create("placeholder", "Név"), Attr.Create("class", "p-2 text-black")], nameVar()), Doc.Input([Attr.Create("placeholder", "Forgácsolás"), Attr.Create("class", "p-2 text-black")], turningVar()), Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-green-600 rounded"), Attr.HandlerImpl("click", () =>() => StartImmediate(Delay(() => {
+      const name=nameVar().Get();
+      const turning=turningVar().Get();
+      return Bind_1(SaveCncRpc(name, turning, fileContent().Get()), () => {
+        globalThis.console.log(["SAVE:", name, turning]);
+        globalThis.console.log("MENTVE!");
+        return Zero();
+      });
+    }), null))], [Doc.TextNode("Mentés")])]):Doc.Empty, currentPage().View);
     this.homeDoc=Doc.BindView((p) => p.$===0?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Home")])]):Doc.Empty, currentPage().View);
     this.analyzerDoc=Doc.BindView((p) => p.$===1?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Analyzer")]), Doc.Element("div", [Attr.Create("class", "flex flex-col gap-6")], [Doc.Element("canvas", [Attr.Create("id", "compassCanvas"), Attr.Create("width", "600"), Attr.Create("height", "600"), Attr.A4((el) => {
       el.addEventListener("wheel", (ev) => {
@@ -1551,6 +1555,9 @@ function forall(f, x){
     else a=false;
   return a;
 }
+function distinctBy(f, a){
+  return ofSeq(distinctBy_1(f, a));
+}
 function create(size, value){
   const r=new Array(size);
   for(let i=0, _1=size-1;i<=_1;i++)r[i]=value;
@@ -1705,6 +1712,9 @@ let _c_1=Lazy((_i) => class Var_1 extends Object_1 {
   static { }
 });
 class attr extends Object_1 { }
+function SaveCncRpc(name, turning, gcode){
+  return(new AjaxRemotingProvider()).Async("Server/SaveCncRpc", [name, turning, gcode]);
+}
 function Map2(fn, a, a_1){
   return CreateLazy(() => Map2_1(fn, a(), a_1()));
 }
@@ -2013,6 +2023,29 @@ function max_1(s){
     const _1=e;
     if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
   }
+}
+function distinctBy_1(f, s){
+  return{GetEnumerator:() => {
+    const o=Get(s);
+    const seen=new HashSet("New_3");
+    return new T(null, null, (e) => {
+      let cur;
+      let has;
+      if(o.MoveNext()){
+        cur=o.Current;
+        has=seen.SAdd(f(cur));
+        while(!has&&o.MoveNext())
+          {
+            cur=o.Current;
+            has=seen.SAdd(f(cur));
+          }
+        return has&&(e.c=cur,true);
+      }
+      else return false;
+    }, () => {
+      o.Dispose();
+    });
+  }};
 }
 function take(n, s){
   n<0?nonNegative():void 0;
@@ -2586,9 +2619,6 @@ class Attr {
   $0;
   $1;
 }
-function scheduler(){
-  return _c_7.scheduler;
-}
 function Delay(mk){
   return(c) => {
     try {
@@ -2601,7 +2631,7 @@ function Delay(mk){
 }
 function Bind_1(r, f){
   return checkCancel((c) => {
-    r(New_5((a) => {
+    r(New_2((a) => {
       if(a.$==0){
         const x=a.$0;
         scheduler().Fork(() => {
@@ -2620,21 +2650,14 @@ function Bind_1(r, f){
   });
 }
 function Zero(){
-  return _c_7.Zero;
+  return _c_4.Zero;
 }
-function Start(c, ctOpt){
+function StartImmediate(c, ctOpt){
   const d=(defCTS())[0];
   const ct=ctOpt==null?d:ctOpt.$0;
-  scheduler().Fork(() => {
-    if(!ct.c)c(New_5((a) => {
-      if(a.$==1)UncaughtAsyncError(a.$0);
-    }, ct));
-  });
-}
-function Return(x){
-  return(c) => {
-    c.k(Ok(x));
-  };
+  if(!ct.c)c(New_2((a) => {
+    if(a.$==1)UncaughtAsyncError(a.$0);
+  }, ct));
 }
 function checkCancel(r){
   return(c) => {
@@ -2643,10 +2666,30 @@ function checkCancel(r){
   };
 }
 function defCTS(){
-  return _c_7.defCTS;
+  return _c_4.defCTS;
 }
 function UncaughtAsyncError(e){
   console.log("WebSharper: Uncaught asynchronous exception", e);
+}
+function cancel(c){
+  c.k(Cc(new OperationCanceledException("New", c.ct)));
+}
+function scheduler(){
+  return _c_4.scheduler;
+}
+function Return(x){
+  return(c) => {
+    c.k(Ok(x));
+  };
+}
+function Start(c, ctOpt){
+  const d=(defCTS())[0];
+  const ct=ctOpt==null?d:ctOpt.$0;
+  scheduler().Fork(() => {
+    if(!ct.c)c(New_2((a) => {
+      if(a.$==1)UncaughtAsyncError(a.$0);
+    }, ct));
+  });
 }
 function FromContinuations(subscribe){
   return(c) => {
@@ -2673,8 +2716,61 @@ function FromContinuations(subscribe){
     });
   };
 }
-function cancel(c){
-  c.k(Cc(new OperationCanceledException("New", c.ct)));
+function GetCT(){
+  return _c_4.GetCT;
+}
+function Register(ct, callback){
+  if(ct===noneCT())return{Dispose(){
+    return null;
+  }};
+  else {
+    const i=ct.r.push(callback)-1;
+    return{Dispose(){
+      return set(ct.r, i, () => { });
+    }};
+  }
+}
+function noneCT(){
+  return _c_4.noneCT;
+}
+class AjaxRemotingProvider extends Object_1 {
+  AsyncBase(m, data){
+    return Delay(() => {
+      const headers=makeHeaders(this.Headers);
+      const payload=makePayload(data);
+      return Bind_1(GetCT(), (a) => Bind_1(FromContinuations((ok, err, cc) => {
+        const waiting=[true];
+        const reg=Register(a, () => {
+          if(waiting[0]){
+            waiting[0]=false;
+            cc(new OperationCanceledException("New", a));
+          }
+        });
+        return AjaxProvider().Async(this.EndPoint+"/"+m, headers, payload, (x) => {
+          if(waiting[0]){
+            waiting[0]=false;
+            reg.Dispose();
+            ok(x);
+          }
+        }, (e) => {
+          if(waiting[0]){
+            waiting[0]=false;
+            reg.Dispose();
+            err(e);
+          }
+        });
+      }), (a_1) => Return(JSON.parse(a_1))));
+    });
+  }
+  get EndPoint(){
+    return EndPoint();
+  }
+  get Headers(){
+    return[];
+  }
+  Async(m, data){
+    return this.AsyncBase(m, data);
+  }
 }
 function notPresent(){
   throw new KeyNotFoundException("New");
@@ -2772,7 +2868,7 @@ function InsertDoc(parent, doc, pos){
     }
 }
 function CreateRunState(parent, doc){
-  return New_3(get_Empty_1(), CreateElemNode(parent, EmptyAttr(), doc));
+  return New_5(get_Empty_1(), CreateElemNode(parent, EmptyAttr(), doc));
 }
 function PerformAnimatedUpdate(childrenOnly, st, doc){
   return get_UseAnimations()?Delay(() => {
@@ -3028,10 +3124,10 @@ function Int(){
   return counter();
 }
 function set_counter(_1){
-  _c_5.counter=_1;
+  _c_6.counter=_1;
 }
 function counter(){
-  return _c_5.counter;
+  return _c_6.counter;
 }
 function Ready(Item1, Item2){
   return{
@@ -3071,7 +3167,7 @@ function Insert(elem, tree){
   }
   loop(tree);
   const arr=nodes.slice(0);
-  let _1=New_2(elem, Flags(tree), arr, oar.length===0?null:Some((el) => {
+  let _1=New_4(elem, Flags(tree), arr, oar.length===0?null:Some((el) => {
     iter_1((f) => {
       f(el);
     }, oar);
@@ -3082,7 +3178,7 @@ function Updates(dyn){
   return MapTreeReduce((x) => x.NChanged, Const(), Map2Unit, dyn.DynNodes);
 }
 function Empty(e){
-  return New_2(e, 0, [], null);
+  return New_4(e, 0, [], null);
 }
 function Flags(a){
   return a!==null&&a.hasOwnProperty("flags")?a.flags:0;
@@ -3091,7 +3187,7 @@ function Dynamic(view, set_1){
   return Attr.A1(new DynamicAttrNode(view, set_1));
 }
 function EmptyAttr(){
-  return _c_6.EmptyAttr;
+  return _c_7.EmptyAttr;
 }
 function HasExitAnim(attr_1){
   const flag=2;
@@ -3239,6 +3335,40 @@ function FileValue(var_1){
 }
 function StringListValue(var_1){
   return ValueWith(StringListApply(), var_1);
+}
+function New_2(k, ct){
+  return{k:k, ct:ct};
+}
+function No(Item){
+  return{$:1, $0:Item};
+}
+function Ok(Item){
+  return{$:0, $0:Item};
+}
+function Cc(Item){
+  return{$:2, $0:Item};
+}
+let _c_4=Lazy((_i) => class $StartupCode_Concurrency {
+  static {
+    _c_4=_i(this);
+  }
+  static GetCT;
+  static Zero;
+  static defCTS;
+  static scheduler;
+  static noneCT;
+  static {
+    this.noneCT=New_3(false, []);
+    this.scheduler=new Scheduler();
+    this.defCTS=[new CancellationTokenSource()];
+    this.Zero=Return();
+    this.GetCT=(c) => {
+      c.k(Ok(c.ct));
+    };
+  }
+});
+function New_3(IsCancellationRequested, Registrations){
+  return{c:IsCancellationRequested, r:Registrations};
 }
 function Obsolete(sn){
   let _1;
@@ -3497,7 +3627,7 @@ function get_Empty(){
   return Anim(Empty_1());
 }
 function BatchUpdatesEnabled(){
-  return _c_4.BatchUpdatesEnabled;
+  return _c_5.BatchUpdatesEnabled;
 }
 function StartProcessor(procAsync){
   const st=[0];
@@ -3516,7 +3646,7 @@ function StartProcessor(procAsync){
     else Equals(m, 1)?st[0]=2:void 0;
   };
 }
-function New_2(DynElem, DynFlags, DynNodes, OnAfterRender_1){
+function New_4(DynElem, DynFlags, DynNodes, OnAfterRender_1){
   const _1={
     DynElem:DynElem, 
     DynFlags:DynFlags, 
@@ -3526,7 +3656,7 @@ function New_2(DynElem, DynFlags, DynNodes, OnAfterRender_1){
   return _1;
 }
 function StringApply(){
-  return _c_6.StringApply;
+  return _c_7.StringApply;
 }
 function ApplyValue(get_1, set_1, var_1){
   let expectedValue;
@@ -3551,22 +3681,22 @@ function ApplyValue(get_1, set_1, var_1){
   }, var_1.View)];
 }
 function StringSet(){
-  return _c_6.StringSet;
+  return _c_7.StringSet;
 }
 function StringGet(){
-  return _c_6.StringGet;
+  return _c_7.StringGet;
 }
 function StringListSet(){
-  return _c_6.StringListSet;
+  return _c_7.StringListSet;
 }
 function StringListGet(){
-  return _c_6.StringListGet;
+  return _c_7.StringListGet;
 }
 function DateTimeSetUnchecked(){
-  return _c_6.DateTimeSetUnchecked;
+  return _c_7.DateTimeSetUnchecked;
 }
 function DateTimeGetUnchecked(){
-  return _c_6.DateTimeGetUnchecked;
+  return _c_7.DateTimeGetUnchecked;
 }
 function FileApplyValue(get_1, set_1, var_1){
   let expectedValue;
@@ -3588,49 +3718,49 @@ function FileApplyValue(get_1, set_1, var_1){
   }, var_1.View)];
 }
 function FileSetUnchecked(){
-  return _c_6.FileSetUnchecked;
+  return _c_7.FileSetUnchecked;
 }
 function FileGetUnchecked(){
-  return _c_6.FileGetUnchecked;
+  return _c_7.FileGetUnchecked;
 }
 function IntSetUnchecked(){
-  return _c_6.IntSetUnchecked;
+  return _c_7.IntSetUnchecked;
 }
 function IntGetUnchecked(){
-  return _c_6.IntGetUnchecked;
+  return _c_7.IntGetUnchecked;
 }
 function IntSetChecked(){
-  return _c_6.IntSetChecked;
+  return _c_7.IntSetChecked;
 }
 function IntGetChecked(){
-  return _c_6.IntGetChecked;
+  return _c_7.IntGetChecked;
 }
 function FloatSetUnchecked(){
-  return _c_6.FloatSetUnchecked;
+  return _c_7.FloatSetUnchecked;
 }
 function FloatGetUnchecked(){
-  return _c_6.FloatGetUnchecked;
+  return _c_7.FloatGetUnchecked;
 }
 function FloatSetChecked(){
-  return _c_6.FloatSetChecked;
+  return _c_7.FloatSetChecked;
 }
 function FloatGetChecked(){
-  return _c_6.FloatGetChecked;
+  return _c_7.FloatGetChecked;
 }
 function FloatApplyUnchecked(){
-  return _c_6.FloatApplyUnchecked;
+  return _c_7.FloatApplyUnchecked;
 }
 function BoolCheckedApply(){
-  return _c_6.BoolCheckedApply;
+  return _c_7.BoolCheckedApply;
 }
 function DateTimeApplyUnchecked(){
-  return _c_6.DateTimeApplyUnchecked;
+  return _c_7.DateTimeApplyUnchecked;
 }
 function FileApplyUnchecked(){
-  return _c_6.FileApplyUnchecked;
+  return _c_7.FileApplyUnchecked;
 }
 function StringListApply(){
-  return _c_6.StringListApply;
+  return _c_7.StringListApply;
 }
 class Scheduler extends Object_1 {
   idle;
@@ -3660,6 +3790,19 @@ class Scheduler extends Object_1 {
     super();
     this.idle=true;
     this.robin=[];
+  }
+}
+class CancellationTokenSource extends Object_1 {
+  init;
+  c;
+  pending;
+  r;
+  constructor(){
+    super();
+    this.c=false;
+    this.pending=null;
+    this.r=[];
+    this.init=1;
   }
 }
 function enumUsing(x, f){
@@ -3884,7 +4027,7 @@ class ValueCollection extends Object_1 {
     this.d=d;
   }
 }
-function New_3(PreviousNodes, Top){
+function New_5(PreviousNodes, Top){
   return{PreviousNodes:PreviousNodes, Top:Top};
 }
 function get_Empty_1(){
@@ -3991,9 +4134,9 @@ function Prolong(nextDuration, anim){
   const last=Create(() => anim.Compute(anim.Duration));
   return{Compute:(t) => t>=dur?last.f():comp(t), Duration:nextDuration};
 }
-let _c_4=Lazy((_i) => class Proxy {
+let _c_5=Lazy((_i) => class Proxy {
   static {
-    _c_4=_i(this);
+    _c_5=_i(this);
   }
   static BatchUpdatesEnabled;
   static {
@@ -4006,18 +4149,18 @@ function concat_3(o){
   for(var k_1 in o)r.push.apply(r, o[k_1]);
   return r;
 }
-let _c_5=Lazy((_i) => class $StartupCode_Abbrev {
+let _c_6=Lazy((_i) => class $StartupCode_Abbrev {
   static {
-    _c_5=_i(this);
+    _c_6=_i(this);
   }
   static counter;
   static {
     this.counter=0;
   }
 });
-let _c_6=Lazy((_i) => class Client {
+let _c_7=Lazy((_i) => class Client {
   static {
-    _c_6=_i(this);
+    _c_7=_i(this);
   }
   static FloatApplyChecked;
   static FloatGetChecked;
@@ -4165,25 +4308,27 @@ let _c_6=Lazy((_i) => class Client {
     this.FloatApplyChecked=(v) => ApplyValue(g_7, s_7, v);
   }
 });
-let _c_7=Lazy((_i) => class $StartupCode_Concurrency {
-  static {
-    _c_7=_i(this);
+class OperationCanceledException extends Error {
+  ct;
+  constructor(i, _1, _2, _3){
+    let ct;
+    if(i=="New"){
+      ct=_1;
+      i="New_1";
+      _1="The operation was canceled.";
+      _2=null;
+      _3=ct;
+    }
+    if(i=="New_1"){
+      const message=_1;
+      const inner=_2;
+      const ct_1=_3;
+      super(message);
+      this.inner=inner;
+      this.ct=ct_1;
+    }
   }
-  static GetCT;
-  static Zero;
-  static defCTS;
-  static scheduler;
-  static noneCT;
-  static {
-    this.noneCT=New_4(false, []);
-    this.scheduler=new Scheduler();
-    this.defCTS=[new CancellationTokenSource()];
-    this.Zero=Return();
-    this.GetCT=(c) => {
-      c.k(Ok(c.ct));
-    };
-  }
-});
+}
 let _c_8=Lazy((_i) => class $StartupCode_DomUtility {
   static {
     _c_8=_i(this);
@@ -4249,7 +4394,7 @@ function Concat_1(xs){
   return TreeReduce(Empty_1(), Append_1, x);
 }
 function Empty_1(){
-  return _c_10.Empty;
+  return _c_11.Empty;
 }
 function head_1(l){
   return l.$==1?l.$0:listEmpty();
@@ -4259,6 +4404,40 @@ function tail(l){
 }
 function listEmpty(){
   return FailWith("The input list was empty.");
+}
+function AjaxProvider(){
+  return _c_10.AjaxProvider;
+}
+function makePayload(data){
+  return JSON.stringify(data);
+}
+function makeHeaders(headers){
+  return NewFromSeq(map((_1) =>[_1[0], _1[1]], distinctBy((t) => t[0], headers.concat([["content-type", "application/json"]]))));
+}
+function EndPoint(){
+  return _c_10.EndPoint;
+}
+function ajax(async, url, headers, data, ok, err, csrf){
+  let xhr=new XMLHttpRequest();
+  let csrf_1=document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*csrftoken\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1");
+  xhr.open("POST", url, async);
+  if(async==true)xhr.withCredentials=true;
+  let h;
+  for(var h_1 in headers)xhr.setRequestHeader(h_1, headers[h_1]);
+  if(csrf_1)xhr.setRequestHeader("x-csrftoken", csrf_1);
+  function k(){
+    if(xhr.status==200)ok(xhr.responseText);
+    else if(csrf&&xhr.status==403&&xhr.responseText=="CSRF")csrf();
+    else {
+      let msg="Response status is not 200: ";
+      err(new Error(msg+xhr.status));
+    }
+  }
+  if("onload"in xhr)xhr.onload=xhr.onerror=xhr.onabort=k;
+  else xhr.onreadystatechange=() => {
+    if(xhr.readyState==4)k();
+  };
+  xhr.send(data);
 }
 function isBlank(s){
   return forall_2(IsWhiteSpace, s);
@@ -4286,34 +4465,6 @@ class CheckedInput {
 }
 function Clear(a){
   a.splice(0, length(a));
-}
-function New_4(IsCancellationRequested, Registrations){
-  return{c:IsCancellationRequested, r:Registrations};
-}
-class CancellationTokenSource extends Object_1 {
-  init;
-  c;
-  pending;
-  r;
-  constructor(){
-    super();
-    this.c=false;
-    this.pending=null;
-    this.r=[];
-    this.init=1;
-  }
-}
-function New_5(k, ct){
-  return{k:k, ct:ct};
-}
-function Ok(Item){
-  return{$:0, $0:Item};
-}
-function No(Item){
-  return{$:1, $0:Item};
-}
-function Cc(Item){
-  return{$:2, $0:Item};
 }
 class DynamicAttrNode extends Object_1 {
   push;
@@ -4389,6 +4540,17 @@ function Intersect_1(a, b){
   set_1.IntersectWith(ToArray_2(b));
   return set_1;
 }
+let _c_10=Lazy((_i) => class $StartupCode_Remoting {
+  static {
+    _c_10=_i(this);
+  }
+  static AjaxProvider;
+  static EndPoint;
+  static {
+    this.EndPoint=globalThis.location.origin;
+    this.AjaxProvider=new XhrProvider();
+  }
+});
 function IsWhiteSpace(c){
   return c.match(new RegExp("\\s"))!==null;
 }
@@ -4466,25 +4628,11 @@ function DocChildren(node){
 function DomNodes(Item){
   return{$:0, $0:Item};
 }
-class OperationCanceledException extends Error {
-  ct;
-  constructor(i, _1, _2, _3){
-    let ct;
-    if(i=="New"){
-      ct=_1;
-      i="New_1";
-      _1="The operation was canceled.";
-      _2=null;
-      _3=ct;
-    }
-    if(i=="New_1"){
-      const message=_1;
-      const inner=_2;
-      const ct_1=_3;
-      super(message);
-      this.inner=inner;
-      this.ct=ct_1;
-    }
+class XhrProvider extends Object_1 {
+  Async(url, headers, data, ok, err){
+    ajax(true, url, headers, data, ok, err, () => {
+      ajax(true, url, headers, data, ok, err, void 0);
+    });
   }
 }
 function Create(f){
@@ -4500,9 +4648,9 @@ function forceLazy(){
 function cachedLazy(){
   return this.v;
 }
-let _c_10=Lazy((_i) => class $StartupCode_AppendList {
+let _c_11=Lazy((_i) => class $StartupCode_AppendList {
   static {
-    _c_10=_i(this);
+    _c_11=_i(this);
   }
   static Empty;
   static {

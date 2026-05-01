@@ -26,7 +26,10 @@ module Server =
 
         cmd.ExecuteNonQuery() |> ignore
     [<Rpc>]
-    let SaveCncRpc (name: string) (turning: string) (gcode: string) : Async<unit> =
+    let SaveCncRpc
+        (name:string)
+        (turning:string)
+        (gcode:string) : Async<unit> =
         async {
             saveCnc name turning gcode
-    }
+        }
