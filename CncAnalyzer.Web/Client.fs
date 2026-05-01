@@ -9,6 +9,7 @@ open WebSharper.JavaScript
 open CncAnalyzer.Web.Parser
 open WebSharper.JavaScript.Dom
 open CncAnalyzer.Web.Server
+open System.Text.Json
 
 [<JavaScript>]
 module Client =
@@ -340,12 +341,12 @@ module Client =
                             async {
                                 let name = JS.Document.GetElementById("nameInput")?value
                                 let turning = JS.Document.GetElementById("authorInput")?value
-                                let imagePath = "images/path.png"
+                                
+                                let json = JsonSerializer.Serialize(gcodeVar.Value)
+                                do! SaveCncRpc name turning json
 
-                                do! CncAnalyzer.Web.Server.SaveCncRpc
-
-                                JS.Global?console?log("SAVE:", name, turning)
-                                JS.Global?console?log("MENTVE!")
+                                //JS.Global?console?log("SAVE:", name, turning)
+                                //JS.Global?console?log("MENTVE!")
                             } |> Async.StartImmediate
                             
                         )
