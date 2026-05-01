@@ -1,6 +1,0 @@
-CREATE TABLE IF NOT EXISTS cnc_files (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    turning TEXT,
-    gcode TEXT
-);

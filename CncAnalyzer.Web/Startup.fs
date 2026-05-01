@@ -18,6 +18,8 @@ let main args =
 
     let app = builder.Build()
 
+    Server.initializeDatabase()
+
     // Configure the HTTP request pipeline.
     if not (app.Environment.IsDevelopment()) then
         app.UseExceptionHandler("/Error")
