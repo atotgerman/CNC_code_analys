@@ -690,7 +690,7 @@ let _c=Lazy((_i) => class $StartupCode_Client {
       const name=nameVar().Get();
       const turning=turningVar().Get();
       return Bind_1(SaveCncRpc(name, turning, fileContent().Get()), () => {
-        globalThis.console.log(["SAVE:", name, turning]);
+        globalThis.console.log(["SAVE:", name, turning, fileContent().Get()]);
         globalThis.console.log("MENTVE!");
         return Zero();
       });

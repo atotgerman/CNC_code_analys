@@ -344,7 +344,7 @@ module Client =
                                 
                                 do! SaveCncRpc name turning fileContent.Value
 
-                                JS.Global?console?log("SAVE:", name, turning)
+                                JS.Global?console?log("SAVE:", name, turning, fileContent.Value)
                                 JS.Global?console?log("MENTVE!")
                             } |> Async.StartImmediate
                             
