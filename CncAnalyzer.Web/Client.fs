@@ -342,8 +342,7 @@ module Client =
                                 let name = JS.Document.GetElementById("nameInput")?value
                                 let turning = JS.Document.GetElementById("authorInput")?value
                                 
-                                let json = JsonSerializer.Serialize(gcodeVar.Value)
-                                do! SaveCncRpc name turning json
+                                do! SaveCncRpc name turning fileContent.Value
 
                                 //JS.Global?console?log("SAVE:", name, turning)
                                 //JS.Global?console?log("MENTVE!")
