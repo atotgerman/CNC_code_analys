@@ -37,7 +37,7 @@ module Server =
         let gcode1 = generateRandomPath 10
         let gcode2 = generateRandomPath 20
         let gcode3 = generateRandomPath 30
-        let gcode5 = generateRandomPath 30
+        let gcode4 = generateRandomPath 30
         let gcode5 = generateRandomPath 35
 
 
@@ -51,9 +51,30 @@ module Server =
                 gcode TEXT
             );
         """
-
+        
         cmd.ExecuteNonQuery() |> ignore
+        let insertData name turning gcode =
+            use insertCmd = conn.CreateCommand()
 
+            insertCmd.CommandText <- """
+                INSERT INTO cnc_files (name, turning, gcode)
+                VALUES (@name, @turning, @gcode)
+            """
+
+            insertCmd.Parameters.AddWithValue("@name", name) |> ignore
+            insertCmd.Parameters.AddWithValue("@turning", turning) |> ignore
+            insertCmd.Parameters.AddWithValue("@gcode", gcode) |> ignore
+
+            insertCmd.ExecuteNonQuery() |> ignore
+
+        insertData "Teszt1" "Marás" gcode1
+        insertData "Teszt2" "Esztergálás" gcode2
+        insertData "Teszt3" "Fúrás" gcode3
+        insertData "Teszt4" "Vágás" gcode4
+        insertData "Teszt5" "Lyukasztás" gcode5
+        
+        
+        
         printfn "Database initialized"
 
     let saveCnc (name: string) (turning: string) (gcode: string) =
