@@ -9,7 +9,22 @@ open System.Text.Json
 module Server =
 
     
-    
+    let generateRandomPath points =
+        let rnd = System.Random()
+
+        let lines =
+            [|
+                yield "Command,X,Y,Comment"
+                yield "G0,0,0,Start"
+
+                for i in 1..points do
+                    let x = rnd.Next(0,100)
+                    let y = rnd.Next(0,100)
+
+                    yield sprintf "G1,%d,%d,Random move" x y
+            |]
+
+        String.concat "\n" lines
     
     let connectionString = "Data Source=CNCdata.db"
 
@@ -19,13 +34,22 @@ module Server =
 
         use cmd = conn.CreateCommand()
 
+        let gcode1 = generateRandomPath 10
+        let gcode2 = generateRandomPath 20
+        let gcode3 = generateRandomPath 30
+        let gcode5 = generateRandomPath 30
+        let gcode5 = generateRandomPath 35
+
+
         cmd.CommandText <- """
-            CREATE TABLE IF NOT EXISTS cnc_files (
+            DROP TABLE IF EXISTS cnc_files;
+
+            CREATE TABLE cnc_files (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT,
                 turning TEXT,
                 gcode TEXT
-            )
+            );
         """
 
         cmd.ExecuteNonQuery() |> ignore
