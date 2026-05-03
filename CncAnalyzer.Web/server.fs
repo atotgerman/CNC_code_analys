@@ -4,6 +4,7 @@ open WebSharper
 open WebSharper.Sitelets
 open Microsoft.Data.Sqlite
 open System.Text.Json
+open CncAnalyzer.Web.SelectDTO
 
 [<JavaScript false>]
 module Server =
@@ -92,6 +93,30 @@ module Server =
         cmd.Parameters.AddWithValue("@gcode", gcode) |> ignore
 
         cmd.ExecuteNonQuery() |> ignore
+
+    let getAllCncFiles () =
+        use conn = new SqliteConnection(connectionString)
+        conn.Open()
+
+        use cmd = conn.CreateCommand()
+        cmd.CommandText <- """
+            SELECT id, name, turning
+            FROM cnc_files
+        """
+
+        use reader = cmd.ExecuteReader()
+
+        let results = ResizeArray<CncFileInfo>()
+
+        while reader.Read() do
+            results.Add({
+                Id = reader.GetInt32(0)
+                Name = reader.GetString(1)
+                Turning = reader.GetString(2)
+            })
+
+        List.ofSeq results
+
     [<Rpc>]
     let SaveCncRpc
         (name:string)
@@ -108,4 +133,29 @@ module Server =
                     printfn "SAVE ERROR: %s" ex.Message
                     printfn "%A" ex
                     raise ex
+        }
+    [<Rpc>]
+    let GetCncFilesRpc () : Async<CncFileInfo list> =
+        async {
+            use conn = new SqliteConnection(connectionString)
+            conn.Open()
+
+            use cmd = conn.CreateCommand()
+            cmd.CommandText <- """
+                SELECT id, name, turning
+                FROM cnc_files
+            """
+
+            use reader = cmd.ExecuteReader()
+
+            let results = ResizeArray<CncFileInfo>()
+
+            while reader.Read() do
+                results.Add({
+                    Id = reader.GetInt32(0)
+                    Name = reader.GetString(1)
+                    Turning = reader.GetString(2)
+                })
+
+            return List.ofSeq results
         }

@@ -30,6 +30,7 @@ function Main(){
   LoadLocalTemplates("");
   Doc.RunById("main", _2);
   initFileUpload();
+  loadCncFiles();
 }
 function saveDoc(){
   return _c.saveDoc;
@@ -87,6 +88,12 @@ function initFileUpload(){
     }
   };
 }
+function loadCncFiles(){
+  StartImmediate(Delay(() => Bind_1(GetCncFilesRpc(), (a) => {
+    cncFilesVar().Set(a);
+    return Zero();
+  })), null);
+}
 function fileContent(){
   return _c.fileContent;
 }
@@ -113,11 +120,20 @@ function directionsVar(){
 function gcodeVar(){
   return _c.gcodeVar;
 }
+function cncFilesVar(){
+  return _c.cncFilesVar;
+}
 function nameVar(){
   return _c.nameVar;
 }
 function turningVar(){
   return _c.turningVar;
+}
+function selectedCncVar(){
+  return _c.selectedCncVar;
+}
+function dropdownDoc(){
+  return _c.dropdownDoc;
 }
 function zoomVar(){
   return _c.zoomVar;
@@ -665,6 +681,7 @@ let _c=Lazy((_i) => class $StartupCode_Client {
   }
   static uploadDoc;
   static analyzerDoc;
+  static dropdownDoc;
   static homeDoc;
   static saveDoc;
   static currentPage;
@@ -675,9 +692,13 @@ let _c=Lazy((_i) => class $StartupCode_Client {
   static showFormVar;
   static fileContent;
   static gcodeVar;
+  static cncFilesVar;
+  static selectedCncVar;
   static zoomVar;
   static {
     this.zoomVar=_c_1.Create_1(1);
+    this.selectedCncVar=_c_1.Create_1("");
+    this.cncFilesVar=_c_1.Create_1(FSharpList.Empty);
     this.gcodeVar=_c_1.Create_1([]);
     this.fileContent=_c_1.Create_1("");
     this.showFormVar=_c_1.Create_1(false);
@@ -696,7 +717,11 @@ let _c=Lazy((_i) => class $StartupCode_Client {
       });
     }), null))], [Doc.TextNode("Mentés")])]):Doc.Empty, currentPage().View);
     this.homeDoc=Doc.BindView((p) => p.$===0?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Home")])]):Doc.Empty, currentPage().View);
-    this.analyzerDoc=Doc.BindView((p) => p.$===1?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Analyzer")]), Doc.Element("div", [Attr.Create("class", "flex flex-col gap-6")], [Doc.Element("canvas", [Attr.Create("id", "compassCanvas"), Attr.Create("width", "600"), Attr.Create("height", "600"), Attr.A4((el) => {
+    this.dropdownDoc=Doc.EmbedView(Map((files) => files.Length>0?Doc.Element("div", [Attr.Create("class", "mb-4")], [Doc.Element("h3", [], [Doc.TextNode("Válassz CNC fájlt")]), Doc.Element("select", [Attr.Create("class", "p-2 text-black rounded"), Attr.HandlerImpl("change", () =>(el) => {
+      const value=el.target.Value;
+      return selectedCncVar().Set(value);
+    })], ofSeq_1(delay(() => append([Doc.Element("option", [Attr.Create("value", "")], [Doc.TextNode("-- válassz --")])], delay(() => map_1((file) => Doc.Element("option", [Attr.Create("value", String(file.Id))], [Doc.TextNode(file.Name+" - "+file.Turning)]), files))))))]):Doc.Empty, cncFilesVar().View));
+    this.analyzerDoc=Doc.BindView((p) => p.$===1?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Analyzer")]), dropdownDoc(), Doc.Element("div", [Attr.Create("class", "flex flex-col gap-6")], [Doc.Element("canvas", [Attr.Create("id", "compassCanvas"), Attr.Create("width", "600"), Attr.Create("height", "600"), Attr.A4((el) => {
       el.addEventListener("wheel", (ev) => {
         ev.preventDefault();
         const factor=ev.deltaY<0?1.1:0.9;
@@ -1520,6 +1545,13 @@ function ofSeq(xs){
     }
   }
 }
+function init(size, f){
+  if(size<0)FailWith("Negative size given.");
+  else null;
+  const r=new Array(size);
+  for(let i=0, _1=size-1;i<=_1;i++)r[i]=f(i);
+  return r;
+}
 function concat(xs){
   return Array.prototype.concat.apply([], ofSeq(xs));
 }
@@ -1546,6 +1578,9 @@ function pick(f, arr){
   const m=tryPick(f, arr);
   return m==null?FailWith("KeyNotFoundException"):m.$0;
 }
+function distinctBy(f, a){
+  return ofSeq(distinctBy_1(f, a));
+}
 function forall(f, x){
   let a=true;
   let i=0;
@@ -1555,19 +1590,9 @@ function forall(f, x){
     else a=false;
   return a;
 }
-function distinctBy(f, a){
-  return ofSeq(distinctBy_1(f, a));
-}
 function create(size, value){
   const r=new Array(size);
   for(let i=0, _1=size-1;i<=_1;i++)r[i]=value;
-  return r;
-}
-function init(size, f){
-  if(size<0)FailWith("Negative size given.");
-  else null;
-  const r=new Array(size);
-  for(let i=0, _1=size-1;i<=_1;i++)r[i]=f(i);
   return r;
 }
 function New(Cmd, X, Y){
@@ -1597,6 +1622,12 @@ function ArcCW(Item1, Item2){
     $0:Item1, 
     $1:Item2
   };
+}
+function GetCncFilesRpc(){
+  return Bind_1((new AjaxRemotingProvider()).Async("Server/GetCncFilesRpc", []), (o) => Return(((DecodeList(Id()))())(o)));
+}
+function SaveCncRpc(name, turning, gcode){
+  return(new AjaxRemotingProvider()).Async("Server/SaveCncRpc", [name, turning, gcode]);
 }
 class Dictionary extends Object_1 {
   equals;
@@ -1676,7 +1707,7 @@ class Dictionary extends Object_1 {
       _3=Hash;
     }
     if(i=="New_6"){
-      const init_2=_1;
+      const init_3=_1;
       const equals=_2;
       const hash=_3;
       super();
@@ -1684,7 +1715,7 @@ class Dictionary extends Object_1 {
       this.hash=hash;
       this.count=0;
       this.data=[];
-      const e=Get(init_2);
+      const e=Get(init_3);
       try {
         while(e.MoveNext())
           {
@@ -1699,6 +1730,34 @@ class Dictionary extends Object_1 {
     }
   }
 }
+class FSharpList {
+  static Empty=Create_1(FSharpList, {$:0});
+  get Length(){
+    return length_1(this);
+  }
+  static Cons(Head, Tail){
+    return Create_1(FSharpList, {
+      $:1, 
+      $0:Head, 
+      $1:Tail
+    });
+  }
+  GetEnumerator(){
+    return new T(this, null, (e) => {
+      const m=e.s;
+      if(m.$==0)return false;
+      else {
+        const xs=m.$1;
+        e.c=m.$0;
+        e.s=xs;
+        return true;
+      }
+    }, void 0);
+  }
+  $;
+  $0;
+  $1;
+}
 function New_1(Angle, Length){
   return{Angle:Angle, Length:Length};
 }
@@ -1712,8 +1771,8 @@ let _c_1=Lazy((_i) => class Var_1 extends Object_1 {
   static { }
 });
 class attr extends Object_1 { }
-function SaveCncRpc(name, turning, gcode){
-  return(new AjaxRemotingProvider()).Async("Server/SaveCncRpc", [name, turning, gcode]);
+function Map(fn, a){
+  return CreateLazy(() => Map_1(fn, a()));
 }
 function Map2(fn, a, a_1){
   return CreateLazy(() => Map2_1(fn, a(), a_1()));
@@ -1725,9 +1784,6 @@ function Sink(act, a){
     });
   }
   scheduler().Fork(loop);
-}
-function Map(fn, a){
-  return CreateLazy(() => Map_1(fn, a()));
 }
 function Const(x){
   const o={s:Forever(x)};
@@ -1764,6 +1820,217 @@ function Sequence(views){
 }
 function Map2Unit(a, a_1){
   return CreateLazy(() => Map2Unit_1(a(), a_1()));
+}
+function delay(f){
+  return{GetEnumerator:() => Get(f())};
+}
+function append(s1, s2){
+  return{GetEnumerator:() => {
+    const e1=Get(s1);
+    const first=[true];
+    return new T(e1, null, (x) => {
+      if(x.s.MoveNext()){
+        x.c=x.s.Current;
+        return true;
+      }
+      else {
+        const x_1=x.s;
+        if(!Equals(x_1, null))x_1.Dispose();
+        x.s=null;
+        return first[0]&&(first[0]=false,x.s=Get(s2),x.s.MoveNext()?(x.c=x.s.Current,true):(x.s.Dispose(),x.s=null,false));
+      }
+    }, (x) => {
+      const x_1=x.s;
+      if(!Equals(x_1, null))x_1.Dispose();
+    });
+  }};
+}
+function map_1(f, s){
+  return{GetEnumerator:() => {
+    const en=Get(s);
+    return new T(null, null, (e) => en.MoveNext()&&(e.c=f(en.Current),true), () => {
+      en.Dispose();
+    });
+  }};
+}
+function head(s){
+  const e=Get(s);
+  try {
+    return e.MoveNext()?e.Current:insufficient();
+  }
+  finally {
+    const _1=e;
+    if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
+  }
+}
+function pairwise_1(s){
+  return map_1((x) =>[get(x, 0), get(x, 1)], windowed(2, s));
+}
+function initInfinite(f){
+  return{GetEnumerator:() => new T(0, null, (e) => {
+    e.c=f(e.s);
+    e.s=e.s+1;
+    return true;
+  }, void 0)};
+}
+function takeWhile(f, s){
+  return delay(() => enumUsing(Get(s), (e) => enumWhile(() => e.MoveNext()&&f(e.Current), delay(() =>[e.Current]))));
+}
+function windowed(windowSize, s){
+  windowSize<=0?FailWith("The input must be positive."):void 0;
+  return delay(() => enumUsing(Get(s), (e) => {
+    const q=[];
+    return append(enumWhile(() => q.length<windowSize&&e.MoveNext(), delay(() => {
+      q.push(e.Current);
+      return[];
+    })), delay(() => q.length===windowSize?append([q.slice(0)], delay(() => enumWhile(() => e.MoveNext(), delay(() => {
+      q.shift();
+      q.push(e.Current);
+      return[q.slice(0)];
+    })))):[]));
+  }));
+}
+function fold(f, x, s){
+  let r=x;
+  const e=Get(s);
+  try {
+    while(e.MoveNext())
+      r=f(r, e.Current);
+    return r;
+  }
+  finally {
+    const _1=e;
+    if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
+  }
+}
+function iter_1(p, s){
+  const e=Get(s);
+  try {
+    while(e.MoveNext())
+      p(e.Current);
+  }
+  finally {
+    const _1=e;
+    if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
+  }
+}
+function collect(f, s){
+  return concat_1(map_1(f, s));
+}
+function distinctBy_1(f, s){
+  return{GetEnumerator:() => {
+    const o=Get(s);
+    const seen=new HashSet("New_3");
+    return new T(null, null, (e) => {
+      let cur;
+      let has;
+      if(o.MoveNext()){
+        cur=o.Current;
+        has=seen.SAdd(f(cur));
+        while(!has&&o.MoveNext())
+          {
+            cur=o.Current;
+            has=seen.SAdd(f(cur));
+          }
+        return has&&(e.c=cur,true);
+      }
+      else return false;
+    }, () => {
+      o.Dispose();
+    });
+  }};
+}
+function concat_1(ss){
+  return{GetEnumerator:() => {
+    const outerE=Get(ss);
+    function next(st){
+      while(true)
+        {
+          const m=st.s;
+          if(Equals(m, null)){
+            if(outerE.MoveNext()){
+              st.s=Get(outerE.Current);
+              st=st;
+            }
+            else {
+              outerE.Dispose();
+              return false;
+            }
+          }
+          else if(m.MoveNext()){
+            st.c=m.Current;
+            return true;
+          }
+          else {
+            st.Dispose();
+            st.s=null;
+            st=st;
+          }
+        }
+    }
+    return new T(null, null, next, (st) => {
+      const x=st.s;
+      if(!Equals(x, null))x.Dispose();
+      const x_1=outerE;
+      if(!Equals(x_1, null))x_1.Dispose();
+    });
+  }};
+}
+function init_1(n, f){
+  return take(n, initInfinite(f));
+}
+function max_1(s){
+  const e=Get(s);
+  try {
+    if(!e.MoveNext())seqEmpty();
+    let m=e.Current;
+    while(e.MoveNext())
+      {
+        const x=e.Current;
+        if(Compare(x, m)===1)m=x;
+      }
+    return m;
+  }
+  finally {
+    const _1=e;
+    if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
+  }
+}
+function take(n, s){
+  n<0?nonNegative():void 0;
+  return{GetEnumerator:() => {
+    const e=[Get(s)];
+    return new T(0, null, (o) => {
+      o.s=o.s+1;
+      if(o.s>n)return false;
+      else {
+        const en=e[0];
+        return Equals(en, null)?insufficient():en.MoveNext()?(o.c=en.Current,o.s===n?(en.Dispose(),e[0]=null):void 0,true):(en.Dispose(),e[0]=null,insufficient());
+      }
+    }, () => {
+      const x=e[0];
+      if(!Equals(x, null))x.Dispose();
+    });
+  }};
+}
+function forall_1(p, s){
+  return!exists_1((x) =>!p(x), s);
+}
+function seqEmpty(){
+  return FailWith("The input sequence was empty.");
+}
+function exists_1(p, s){
+  const e=Get(s);
+  try {
+    let r=false;
+    while(!r&&e.MoveNext())
+      r=p(e.Current);
+    return r;
+  }
+  finally {
+    const _1=e;
+    if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
+  }
 }
 class HashSet extends Object_1 {
   equals;
@@ -1843,16 +2110,16 @@ class HashSet extends Object_1 {
       _2=Equals;
       _3=Hash;
     }
-    let init_2;
+    let init_3;
     if(i=="New_2"){
-      init_2=_1;
+      init_3=_1;
       i="New_4";
-      _1=init_2;
+      _1=init_3;
       _2=Equals;
       _3=Hash;
     }
     if(i=="New_4"){
-      const init_3=_1;
+      const init_4=_1;
       const equals=_2;
       const hash=_3;
       super();
@@ -1860,7 +2127,7 @@ class HashSet extends Object_1 {
       this.hash=hash;
       this.data=[];
       this.count=0;
-      const e=Get(init_3);
+      const e=Get(init_4);
       try {
         while(e.MoveNext())
           this.add(e.Current);
@@ -1870,217 +2137,6 @@ class HashSet extends Object_1 {
         if(typeof _4=="object"&&isIDisposable(_4))e.Dispose();
       }
     }
-  }
-}
-function append(s1, s2){
-  return{GetEnumerator:() => {
-    const e1=Get(s1);
-    const first=[true];
-    return new T(e1, null, (x) => {
-      if(x.s.MoveNext()){
-        x.c=x.s.Current;
-        return true;
-      }
-      else {
-        const x_1=x.s;
-        if(!Equals(x_1, null))x_1.Dispose();
-        x.s=null;
-        return first[0]&&(first[0]=false,x.s=Get(s2),x.s.MoveNext()?(x.c=x.s.Current,true):(x.s.Dispose(),x.s=null,false));
-      }
-    }, (x) => {
-      const x_1=x.s;
-      if(!Equals(x_1, null))x_1.Dispose();
-    });
-  }};
-}
-function head(s){
-  const e=Get(s);
-  try {
-    return e.MoveNext()?e.Current:insufficient();
-  }
-  finally {
-    const _1=e;
-    if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
-  }
-}
-function pairwise_1(s){
-  return map_1((x) =>[get(x, 0), get(x, 1)], windowed(2, s));
-}
-function initInfinite(f){
-  return{GetEnumerator:() => new T(0, null, (e) => {
-    e.c=f(e.s);
-    e.s=e.s+1;
-    return true;
-  }, void 0)};
-}
-function takeWhile(f, s){
-  return delay(() => enumUsing(Get(s), (e) => enumWhile(() => e.MoveNext()&&f(e.Current), delay(() =>[e.Current]))));
-}
-function windowed(windowSize, s){
-  windowSize<=0?FailWith("The input must be positive."):void 0;
-  return delay(() => enumUsing(Get(s), (e) => {
-    const q=[];
-    return append(enumWhile(() => q.length<windowSize&&e.MoveNext(), delay(() => {
-      q.push(e.Current);
-      return[];
-    })), delay(() => q.length===windowSize?append([q.slice(0)], delay(() => enumWhile(() => e.MoveNext(), delay(() => {
-      q.shift();
-      q.push(e.Current);
-      return[q.slice(0)];
-    })))):[]));
-  }));
-}
-function map_1(f, s){
-  return{GetEnumerator:() => {
-    const en=Get(s);
-    return new T(null, null, (e) => en.MoveNext()&&(e.c=f(en.Current),true), () => {
-      en.Dispose();
-    });
-  }};
-}
-function delay(f){
-  return{GetEnumerator:() => Get(f())};
-}
-function fold(f, x, s){
-  let r=x;
-  const e=Get(s);
-  try {
-    while(e.MoveNext())
-      r=f(r, e.Current);
-    return r;
-  }
-  finally {
-    const _1=e;
-    if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
-  }
-}
-function iter_1(p, s){
-  const e=Get(s);
-  try {
-    while(e.MoveNext())
-      p(e.Current);
-  }
-  finally {
-    const _1=e;
-    if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
-  }
-}
-function collect(f, s){
-  return concat_1(map_1(f, s));
-}
-function concat_1(ss){
-  return{GetEnumerator:() => {
-    const outerE=Get(ss);
-    function next(st){
-      while(true)
-        {
-          const m=st.s;
-          if(Equals(m, null)){
-            if(outerE.MoveNext()){
-              st.s=Get(outerE.Current);
-              st=st;
-            }
-            else {
-              outerE.Dispose();
-              return false;
-            }
-          }
-          else if(m.MoveNext()){
-            st.c=m.Current;
-            return true;
-          }
-          else {
-            st.Dispose();
-            st.s=null;
-            st=st;
-          }
-        }
-    }
-    return new T(null, null, next, (st) => {
-      const x=st.s;
-      if(!Equals(x, null))x.Dispose();
-      const x_1=outerE;
-      if(!Equals(x_1, null))x_1.Dispose();
-    });
-  }};
-}
-function init_1(n, f){
-  return take(n, initInfinite(f));
-}
-function max_1(s){
-  const e=Get(s);
-  try {
-    if(!e.MoveNext())seqEmpty();
-    let m=e.Current;
-    while(e.MoveNext())
-      {
-        const x=e.Current;
-        if(Compare(x, m)===1)m=x;
-      }
-    return m;
-  }
-  finally {
-    const _1=e;
-    if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
-  }
-}
-function distinctBy_1(f, s){
-  return{GetEnumerator:() => {
-    const o=Get(s);
-    const seen=new HashSet("New_3");
-    return new T(null, null, (e) => {
-      let cur;
-      let has;
-      if(o.MoveNext()){
-        cur=o.Current;
-        has=seen.SAdd(f(cur));
-        while(!has&&o.MoveNext())
-          {
-            cur=o.Current;
-            has=seen.SAdd(f(cur));
-          }
-        return has&&(e.c=cur,true);
-      }
-      else return false;
-    }, () => {
-      o.Dispose();
-    });
-  }};
-}
-function take(n, s){
-  n<0?nonNegative():void 0;
-  return{GetEnumerator:() => {
-    const e=[Get(s)];
-    return new T(0, null, (o) => {
-      o.s=o.s+1;
-      if(o.s>n)return false;
-      else {
-        const en=e[0];
-        return Equals(en, null)?insufficient():en.MoveNext()?(o.c=en.Current,o.s===n?(en.Dispose(),e[0]=null):void 0,true):(en.Dispose(),e[0]=null,insufficient());
-      }
-    }, () => {
-      const x=e[0];
-      if(!Equals(x, null))x.Dispose();
-    });
-  }};
-}
-function forall_1(p, s){
-  return!exists_1((x) =>!p(x), s);
-}
-function seqEmpty(){
-  return FailWith("The input sequence was empty.");
-}
-function exists_1(p, s){
-  const e=Get(s);
-  try {
-    let r=false;
-    while(!r&&e.MoveNext())
-      r=p(e.Current);
-    return r;
-  }
-  finally {
-    const _1=e;
-    if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
   }
 }
 let _c_2=Lazy((_i) => class TemplateInitializer extends Object_1 {
@@ -2264,6 +2320,168 @@ class VarStrList extends TemplateHole {
   }
 }
 class Exception extends Object_1 { }
+function Delay(mk){
+  return(c) => {
+    try {
+      (mk())(c);
+    }
+    catch(e){
+      c.k(No(e));
+    }
+  };
+}
+function Bind_1(r, f){
+  return checkCancel((c) => {
+    r(New_2((a) => {
+      if(a.$==0){
+        const x=a.$0;
+        scheduler().Fork(() => {
+          try {
+            (f(x))(c);
+          }
+          catch(e){
+            c.k(No(e));
+          }
+        });
+      }
+      else scheduler().Fork(() => {
+        c.k(a);
+      });
+    }, c.ct));
+  });
+}
+function Zero(){
+  return _c_4.Zero;
+}
+function StartImmediate(c, ctOpt){
+  const d=(defCTS())[0];
+  const ct=ctOpt==null?d:ctOpt.$0;
+  if(!ct.c)c(New_2((a) => {
+    if(a.$==1)UncaughtAsyncError(a.$0);
+  }, ct));
+}
+function checkCancel(r){
+  return(c) => {
+    if(c.ct.c)cancel(c);
+    else r(c);
+  };
+}
+function defCTS(){
+  return _c_4.defCTS;
+}
+function UncaughtAsyncError(e){
+  console.log("WebSharper: Uncaught asynchronous exception", e);
+}
+function cancel(c){
+  c.k(Cc(new OperationCanceledException("New", c.ct)));
+}
+function scheduler(){
+  return _c_4.scheduler;
+}
+function Return(x){
+  return(c) => {
+    c.k(Ok(x));
+  };
+}
+function Start(c, ctOpt){
+  const d=(defCTS())[0];
+  const ct=ctOpt==null?d:ctOpt.$0;
+  scheduler().Fork(() => {
+    if(!ct.c)c(New_2((a) => {
+      if(a.$==1)UncaughtAsyncError(a.$0);
+    }, ct));
+  });
+}
+function GetCT(){
+  return _c_4.GetCT;
+}
+function FromContinuations(subscribe){
+  return(c) => {
+    const continued=[false];
+    const once=(cont) => {
+      if(continued[0])FailWith("A continuation provided by Async.FromContinuations was invoked multiple times");
+      else {
+        continued[0]=true;
+        scheduler().Fork(cont);
+      }
+    };
+    subscribe((a) => {
+      once(() => {
+        c.k(Ok(a));
+      });
+    }, (e) => {
+      once(() => {
+        c.k(No(e));
+      });
+    }, (e) => {
+      once(() => {
+        c.k(Cc(e));
+      });
+    });
+  };
+}
+function Register(ct, callback){
+  if(ct===noneCT())return{Dispose(){
+    return null;
+  }};
+  else {
+    const i=ct.r.push(callback)-1;
+    return{Dispose(){
+      return set(ct.r, i, () => { });
+    }};
+  }
+}
+function noneCT(){
+  return _c_4.noneCT;
+}
+class AjaxRemotingProvider extends Object_1 {
+  AsyncBase(m, data){
+    return Delay(() => {
+      const headers=makeHeaders(this.Headers);
+      const payload=makePayload(data);
+      return Bind_1(GetCT(), (a) => Bind_1(FromContinuations((ok, err, cc) => {
+        const waiting=[true];
+        const reg=Register(a, () => {
+          if(waiting[0]){
+            waiting[0]=false;
+            cc(new OperationCanceledException("New", a));
+          }
+        });
+        return AjaxProvider().Async(this.EndPoint+"/"+m, headers, payload, (x) => {
+          if(waiting[0]){
+            waiting[0]=false;
+            reg.Dispose();
+            ok(x);
+          }
+        }, (e) => {
+          if(waiting[0]){
+            waiting[0]=false;
+            reg.Dispose();
+            err(e);
+          }
+        });
+      }), (a_1) => Return(JSON.parse(a_1))));
+    });
+  }
+  get EndPoint(){
+    return EndPoint();
+  }
+  get Headers(){
+    return[];
+  }
+  Async(m, data){
+    return this.AsyncBase(m, data);
+  }
+}
+function DecodeList(decEl){
+  return() =>(a) => {
+    const e=decEl();
+    return init_2(length(a), (i) => e(get(a, i)));
+  };
+}
+function Id(){
+  return() =>(x) => x;
+}
 function TextNodeDoc(Item){
   return{$:5, $0:Item};
 }
@@ -2336,6 +2554,17 @@ class ConcreteVar extends Var {
     this.id=Int();
   }
 }
+function Map_1(fn, sn){
+  const m=sn.s;
+  if(m!=null&&m.$==0)return{s:Forever(fn(m.$0))};
+  else {
+    const res={s:Waiting([], [])};
+    When(sn, (a) => {
+      MarkDone(res, sn, fn(a));
+    }, res);
+    return res;
+  }
+}
 function Map2_1(fn, sn1, sn2){
   const _1=sn1.s;
   const _2=sn2.s;
@@ -2372,21 +2601,30 @@ function WhenRun(snap, avail, obs){
   }
   else avail(m.$0);
 }
-function Map_1(fn, sn){
-  const m=sn.s;
-  if(m!=null&&m.$==0)return{s:Forever(fn(m.$0))};
-  else {
-    const res={s:Waiting([], [])};
-    When(sn, (a) => {
-      MarkDone(res, sn, fn(a));
-    }, res);
-    return res;
-  }
-}
 function WhenObsoleteRun(snap, obs){
   const m=snap.s;
   if(m==null)obs();
   else m!=null&&m.$==2?(m.$0,m.$1.push(obs)):m!=null&&m.$==3?(m.$0,m.$1.push(obs)):m.$0;
+}
+function When(snap, avail, obs){
+  const m=snap.s;
+  if(m==null)Obsolete(obs);
+  else if(m!=null&&m.$==2){
+    const v=m.$0;
+    EnqueueSafe(m.$1, obs);
+    avail(v);
+  }
+  else if(m!=null&&m.$==3){
+    const q2=m.$1;
+    m.$0.push(avail);
+    EnqueueSafe(q2, obs);
+  }
+  else avail(m.$0);
+}
+function MarkDone(res, sn, v){
+  const _1=sn.s;
+  if(_1!=null&&_1.$==0)MarkForever(res, v);
+  else MarkReady(res, v);
 }
 function Map2Opt1(fn, x, sn2){
   return Map_1((y) => fn(x, y), sn2);
@@ -2416,26 +2654,6 @@ function MarkReady(sn, v){
     for(let i=0, _1=length(q1)-1;i<=_1;i++)(get(q1, i))(v);
   }
   else void 0;
-}
-function When(snap, avail, obs){
-  const m=snap.s;
-  if(m==null)Obsolete(obs);
-  else if(m!=null&&m.$==2){
-    const v=m.$0;
-    EnqueueSafe(m.$1, obs);
-    avail(v);
-  }
-  else if(m!=null&&m.$==3){
-    const q2=m.$1;
-    m.$0.push(avail);
-    EnqueueSafe(q2, obs);
-  }
-  else avail(m.$0);
-}
-function MarkDone(res, sn, v){
-  const _1=sn.s;
-  if(_1!=null&&_1.$==0)MarkForever(res, v);
-  else MarkReady(res, v);
 }
 function EnqueueSafe(q, x){
   q.push(x);
@@ -2602,8 +2820,8 @@ class Attr {
     const x=ofSeqNonCopying(xs);
     return TreeReduce(EmptyAttr(), (_1, _2) => AppendTree(_1, _2), x);
   }
-  static A3(init_2){
-    return Create_1(Attr, {$:3, $0:init_2});
+  static A3(init_3){
+    return Create_1(Attr, {$:3, $0:init_3});
   }
   static A1(Item){
     return Create_1(Attr, {$:1, $0:Item});
@@ -2619,161 +2837,63 @@ class Attr {
   $0;
   $1;
 }
-function Delay(mk){
-  return(c) => {
-    try {
-      (mk())(c);
+function length_1(l){
+  let r=l;
+  let i=0;
+  while(r.$==1)
+    {
+      r=tail(r);
+      i=i+1;
     }
-    catch(e){
-      c.k(No(e));
-    }
-  };
+  return i;
 }
-function Bind_1(r, f){
-  return checkCancel((c) => {
-    r(New_2((a) => {
-      if(a.$==0){
-        const x=a.$0;
-        scheduler().Fork(() => {
-          try {
-            (f(x))(c);
-          }
-          catch(e){
-            c.k(No(e));
-          }
-        });
-      }
-      else scheduler().Fork(() => {
-        c.k(a);
-      });
-    }, c.ct));
-  });
-}
-function Zero(){
-  return _c_4.Zero;
-}
-function StartImmediate(c, ctOpt){
-  const d=(defCTS())[0];
-  const ct=ctOpt==null?d:ctOpt.$0;
-  if(!ct.c)c(New_2((a) => {
-    if(a.$==1)UncaughtAsyncError(a.$0);
-  }, ct));
-}
-function checkCancel(r){
-  return(c) => {
-    if(c.ct.c)cancel(c);
-    else r(c);
-  };
-}
-function defCTS(){
-  return _c_4.defCTS;
-}
-function UncaughtAsyncError(e){
-  console.log("WebSharper: Uncaught asynchronous exception", e);
-}
-function cancel(c){
-  c.k(Cc(new OperationCanceledException("New", c.ct)));
-}
-function scheduler(){
-  return _c_4.scheduler;
-}
-function Return(x){
-  return(c) => {
-    c.k(Ok(x));
-  };
-}
-function Start(c, ctOpt){
-  const d=(defCTS())[0];
-  const ct=ctOpt==null?d:ctOpt.$0;
-  scheduler().Fork(() => {
-    if(!ct.c)c(New_2((a) => {
-      if(a.$==1)UncaughtAsyncError(a.$0);
-    }, ct));
-  });
-}
-function FromContinuations(subscribe){
-  return(c) => {
-    const continued=[false];
-    const once=(cont) => {
-      if(continued[0])FailWith("A continuation provided by Async.FromContinuations was invoked multiple times");
-      else {
-        continued[0]=true;
-        scheduler().Fork(cont);
-      }
-    };
-    subscribe((a) => {
-      once(() => {
-        c.k(Ok(a));
-      });
-    }, (e) => {
-      once(() => {
-        c.k(No(e));
-      });
-    }, (e) => {
-      once(() => {
-        c.k(Cc(e));
-      });
-    });
-  };
-}
-function GetCT(){
-  return _c_4.GetCT;
-}
-function Register(ct, callback){
-  if(ct===noneCT())return{Dispose(){
-    return null;
-  }};
+function ofSeq_1(s){
+  if(s instanceof FSharpList)return s;
+  else if(s instanceof Array)return ofArray(s);
   else {
-    const i=ct.r.push(callback)-1;
-    return{Dispose(){
-      return set(ct.r, i, () => { });
-    }};
+    const e=Get(s);
+    try {
+      let r;
+      let go=e.MoveNext();
+      if(!go)return FSharpList.Empty;
+      else {
+        const res=Create_1(FSharpList, {$:1});
+        r=res;
+        while(go)
+          {
+            r.$0=e.Current;
+            if(e.MoveNext()){
+              const t=Create_1(FSharpList, {$:1});
+              r=(r.$1=t,t);
+            }
+            else go=false;
+          }
+        r.$1=FSharpList.Empty;
+        return res;
+      }
+    }
+    finally {
+      const _1=e;
+      if(typeof _1=="object"&&isIDisposable(_1))e.Dispose();
+    }
   }
 }
-function noneCT(){
-  return _c_4.noneCT;
+function init_2(s, f){
+  return ofArray(init(s, f));
 }
-class AjaxRemotingProvider extends Object_1 {
-  AsyncBase(m, data){
-    return Delay(() => {
-      const headers=makeHeaders(this.Headers);
-      const payload=makePayload(data);
-      return Bind_1(GetCT(), (a) => Bind_1(FromContinuations((ok, err, cc) => {
-        const waiting=[true];
-        const reg=Register(a, () => {
-          if(waiting[0]){
-            waiting[0]=false;
-            cc(new OperationCanceledException("New", a));
-          }
-        });
-        return AjaxProvider().Async(this.EndPoint+"/"+m, headers, payload, (x) => {
-          if(waiting[0]){
-            waiting[0]=false;
-            reg.Dispose();
-            ok(x);
-          }
-        }, (e) => {
-          if(waiting[0]){
-            waiting[0]=false;
-            reg.Dispose();
-            err(e);
-          }
-        });
-      }), (a_1) => Return(JSON.parse(a_1))));
-    });
-  }
-  get EndPoint(){
-    return EndPoint();
-  }
-  get Headers(){
-    return[];
-  }
-  Async(m, data){
-    return this.AsyncBase(m, data);
-  }
+function ofArray(arr){
+  let r=FSharpList.Empty;
+  for(let i=length(arr)-1, _1=0;i>=_1;i--)r=FSharpList.Cons(get(arr, i), r);
+  return r;
 }
-function notPresent(){
-  throw new KeyNotFoundException("New");
+function tail(l){
+  return l.$==1?l.$1:listEmpty();
+}
+function listEmpty(){
+  return FailWith("The input list was empty.");
+}
+function head_1(l){
+  return l.$==1?l.$0:listEmpty();
 }
 function Get(x){
   return x instanceof Array?ArrayEnumerator(x):Equals(typeof x, "string")?StringEnumerator(x):x.GetEnumerator();
@@ -2818,6 +2938,9 @@ class T extends Object_1 {
     this.d=d;
     this.e=0;
   }
+}
+function notPresent(){
+  throw new KeyNotFoundException("New");
 }
 let _c_3=Lazy((_i) => class $StartupCode_Templates {
   static {
@@ -3095,6 +3218,40 @@ function arrContains(item, arr){
     else i=i+1;
   return!c;
 }
+function New_2(k, ct){
+  return{k:k, ct:ct};
+}
+function No(Item){
+  return{$:1, $0:Item};
+}
+function Ok(Item){
+  return{$:0, $0:Item};
+}
+function Cc(Item){
+  return{$:2, $0:Item};
+}
+let _c_4=Lazy((_i) => class $StartupCode_Concurrency {
+  static {
+    _c_4=_i(this);
+  }
+  static GetCT;
+  static Zero;
+  static defCTS;
+  static scheduler;
+  static noneCT;
+  static {
+    this.noneCT=New_3(false, []);
+    this.scheduler=new Scheduler();
+    this.defCTS=[new CancellationTokenSource()];
+    this.Zero=Return();
+    this.GetCT=(c) => {
+      c.k(Ok(c.ct));
+    };
+  }
+});
+function New_3(IsCancellationRequested, Registrations){
+  return{c:IsCancellationRequested, r:Registrations};
+}
 class DocElemNode {
   Attr;
   Children;
@@ -3335,40 +3492,6 @@ function FileValue(var_1){
 }
 function StringListValue(var_1){
   return ValueWith(StringListApply(), var_1);
-}
-function New_2(k, ct){
-  return{k:k, ct:ct};
-}
-function No(Item){
-  return{$:1, $0:Item};
-}
-function Ok(Item){
-  return{$:0, $0:Item};
-}
-function Cc(Item){
-  return{$:2, $0:Item};
-}
-let _c_4=Lazy((_i) => class $StartupCode_Concurrency {
-  static {
-    _c_4=_i(this);
-  }
-  static GetCT;
-  static Zero;
-  static defCTS;
-  static scheduler;
-  static noneCT;
-  static {
-    this.noneCT=New_3(false, []);
-    this.scheduler=new Scheduler();
-    this.defCTS=[new CancellationTokenSource()];
-    this.Zero=Return();
-    this.GetCT=(c) => {
-      c.k(Ok(c.ct));
-    };
-  }
-});
-function New_3(IsCancellationRequested, Registrations){
-  return{c:IsCancellationRequested, r:Registrations};
 }
 function Obsolete(sn){
   let _1;
@@ -3646,6 +3769,49 @@ function StartProcessor(procAsync){
     else Equals(m, 1)?st[0]=2:void 0;
   };
 }
+class Scheduler extends Object_1 {
+  idle;
+  robin;
+  Fork(action){
+    this.robin.push(action);
+    this.idle?(this.idle=false,setTimeout(() => {
+      this.tick();
+    }, 0)):void 0;
+  }
+  tick(){
+    const t=Date.now();
+    let loop=true;
+    while(loop)
+      if(this.robin.length===0){
+        this.idle=true;
+        loop=false;
+      }
+      else {
+        (this.robin.shift())();
+        Date.now()-t>40?(setTimeout(() => {
+          this.tick();
+        }, 0),loop=false):void 0;
+      }
+  }
+  constructor(){
+    super();
+    this.idle=true;
+    this.robin=[];
+  }
+}
+class CancellationTokenSource extends Object_1 {
+  init;
+  c;
+  pending;
+  r;
+  constructor(){
+    super();
+    this.c=false;
+    this.pending=null;
+    this.r=[];
+    this.init=1;
+  }
+}
 function New_4(DynElem, DynFlags, DynNodes, OnAfterRender_1){
   const _1={
     DynElem:DynElem, 
@@ -3762,49 +3928,6 @@ function FileApplyUnchecked(){
 function StringListApply(){
   return _c_7.StringListApply;
 }
-class Scheduler extends Object_1 {
-  idle;
-  robin;
-  Fork(action){
-    this.robin.push(action);
-    this.idle?(this.idle=false,setTimeout(() => {
-      this.tick();
-    }, 0)):void 0;
-  }
-  tick(){
-    const t=Date.now();
-    let loop=true;
-    while(loop)
-      if(this.robin.length===0){
-        this.idle=true;
-        loop=false;
-      }
-      else {
-        (this.robin.shift())();
-        Date.now()-t>40?(setTimeout(() => {
-          this.tick();
-        }, 0),loop=false):void 0;
-      }
-  }
-  constructor(){
-    super();
-    this.idle=true;
-    this.robin=[];
-  }
-}
-class CancellationTokenSource extends Object_1 {
-  init;
-  c;
-  pending;
-  r;
-  constructor(){
-    super();
-    this.c=false;
-    this.pending=null;
-    this.r=[];
-    this.init=1;
-  }
-}
 function enumUsing(x, f){
   return{GetEnumerator:() => {
     let enum_1;
@@ -3913,31 +4036,6 @@ function Choice1Of2(Item){
 }
 function Choice2Of2(Item){
   return{$:1, $0:Item};
-}
-class FSharpList {
-  static Cons(Head, Tail){
-    return Create_1(FSharpList, {
-      $:1, 
-      $0:Head, 
-      $1:Tail
-    });
-  }
-  static Empty=Create_1(FSharpList, {$:0});
-  GetEnumerator(){
-    return new T(this, null, (e) => {
-      const m=e.s;
-      if(m.$==0)return false;
-      else {
-        const xs=m.$1;
-        e.c=m.$0;
-        e.s=xs;
-        return true;
-      }
-    }, void 0);
-  }
-  $;
-  $0;
-  $1;
 }
 function TreeReduce(defaultValue, reduction, array){
   const l=length(array);
@@ -4143,11 +4241,66 @@ let _c_5=Lazy((_i) => class Proxy {
     this.BatchUpdatesEnabled=true;
   }
 });
+class OperationCanceledException extends Error {
+  ct;
+  constructor(i, _1, _2, _3){
+    let ct;
+    if(i=="New"){
+      ct=_1;
+      i="New_1";
+      _1="The operation was canceled.";
+      _2=null;
+      _3=ct;
+    }
+    if(i=="New_1"){
+      const message=_1;
+      const inner=_2;
+      const ct_1=_3;
+      super(message);
+      this.inner=inner;
+      this.ct=ct_1;
+    }
+  }
+}
 function concat_3(o){
   let r=[];
   let k;
   for(var k_1 in o)r.push.apply(r, o[k_1]);
   return r;
+}
+function AjaxProvider(){
+  return _c_10.AjaxProvider;
+}
+function makePayload(data){
+  return JSON.stringify(data);
+}
+function makeHeaders(headers){
+  return NewFromSeq(map((_1) =>[_1[0], _1[1]], distinctBy((t) => t[0], headers.concat([["content-type", "application/json"]]))));
+}
+function EndPoint(){
+  return _c_10.EndPoint;
+}
+function ajax(async, url, headers, data, ok, err, csrf){
+  let xhr=new XMLHttpRequest();
+  let csrf_1=document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*csrftoken\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1");
+  xhr.open("POST", url, async);
+  if(async==true)xhr.withCredentials=true;
+  let h;
+  for(var h_1 in headers)xhr.setRequestHeader(h_1, headers[h_1]);
+  if(csrf_1)xhr.setRequestHeader("x-csrftoken", csrf_1);
+  function k(){
+    if(xhr.status==200)ok(xhr.responseText);
+    else if(csrf&&xhr.status==403&&xhr.responseText=="CSRF")csrf();
+    else {
+      let msg="Response status is not 200: ";
+      err(new Error(msg+xhr.status));
+    }
+  }
+  if("onload"in xhr)xhr.onload=xhr.onerror=xhr.onabort=k;
+  else xhr.onreadystatechange=() => {
+    if(xhr.readyState==4)k();
+  };
+  xhr.send(data);
 }
 let _c_6=Lazy((_i) => class $StartupCode_Abbrev {
   static {
@@ -4308,27 +4461,6 @@ let _c_7=Lazy((_i) => class Client {
     this.FloatApplyChecked=(v) => ApplyValue(g_7, s_7, v);
   }
 });
-class OperationCanceledException extends Error {
-  ct;
-  constructor(i, _1, _2, _3){
-    let ct;
-    if(i=="New"){
-      ct=_1;
-      i="New_1";
-      _1="The operation was canceled.";
-      _2=null;
-      _3=ct;
-    }
-    if(i=="New_1"){
-      const message=_1;
-      const inner=_2;
-      const ct_1=_3;
-      super(message);
-      this.inner=inner;
-      this.ct=ct_1;
-    }
-  }
-}
 let _c_8=Lazy((_i) => class $StartupCode_DomUtility {
   static {
     _c_8=_i(this);
@@ -4396,49 +4528,17 @@ function Concat_1(xs){
 function Empty_1(){
   return _c_11.Empty;
 }
-function head_1(l){
-  return l.$==1?l.$0:listEmpty();
-}
-function tail(l){
-  return l.$==1?l.$1:listEmpty();
-}
-function listEmpty(){
-  return FailWith("The input list was empty.");
-}
-function AjaxProvider(){
-  return _c_10.AjaxProvider;
-}
-function makePayload(data){
-  return JSON.stringify(data);
-}
-function makeHeaders(headers){
-  return NewFromSeq(map((_1) =>[_1[0], _1[1]], distinctBy((t) => t[0], headers.concat([["content-type", "application/json"]]))));
-}
-function EndPoint(){
-  return _c_10.EndPoint;
-}
-function ajax(async, url, headers, data, ok, err, csrf){
-  let xhr=new XMLHttpRequest();
-  let csrf_1=document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*csrftoken\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1");
-  xhr.open("POST", url, async);
-  if(async==true)xhr.withCredentials=true;
-  let h;
-  for(var h_1 in headers)xhr.setRequestHeader(h_1, headers[h_1]);
-  if(csrf_1)xhr.setRequestHeader("x-csrftoken", csrf_1);
-  function k(){
-    if(xhr.status==200)ok(xhr.responseText);
-    else if(csrf&&xhr.status==403&&xhr.responseText=="CSRF")csrf();
-    else {
-      let msg="Response status is not 200: ";
-      err(new Error(msg+xhr.status));
-    }
+let _c_10=Lazy((_i) => class $StartupCode_Remoting {
+  static {
+    _c_10=_i(this);
   }
-  if("onload"in xhr)xhr.onload=xhr.onerror=xhr.onabort=k;
-  else xhr.onreadystatechange=() => {
-    if(xhr.readyState==4)k();
-  };
-  xhr.send(data);
-}
+  static AjaxProvider;
+  static EndPoint;
+  static {
+    this.EndPoint=globalThis.location.origin;
+    this.AjaxProvider=new XhrProvider();
+  }
+});
 function isBlank(s){
   return forall_2(IsWhiteSpace, s);
 }
@@ -4540,17 +4640,13 @@ function Intersect_1(a, b){
   set_1.IntersectWith(ToArray_2(b));
   return set_1;
 }
-let _c_10=Lazy((_i) => class $StartupCode_Remoting {
-  static {
-    _c_10=_i(this);
+class XhrProvider extends Object_1 {
+  Async(url, headers, data, ok, err){
+    ajax(true, url, headers, data, ok, err, () => {
+      ajax(true, url, headers, data, ok, err, void 0);
+    });
   }
-  static AjaxProvider;
-  static EndPoint;
-  static {
-    this.EndPoint=globalThis.location.origin;
-    this.AjaxProvider=new XhrProvider();
-  }
-});
+}
 function IsWhiteSpace(c){
   return c.match(new RegExp("\\s"))!==null;
 }
@@ -4627,13 +4723,6 @@ function DocChildren(node){
 }
 function DomNodes(Item){
   return{$:0, $0:Item};
-}
-class XhrProvider extends Object_1 {
-  Async(url, headers, data, ok, err){
-    ajax(true, url, headers, data, ok, err, () => {
-      ajax(true, url, headers, data, ok, err, void 0);
-    });
-  }
 }
 function Create(f){
   return New_6(false, f, forceLazy);

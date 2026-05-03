@@ -9,11 +9,14 @@ open WebSharper.JavaScript
 open CncAnalyzer.Web.Parser
 open WebSharper.JavaScript.Dom
 open CncAnalyzer.Web.Server
+open CncAnalyzer.Web.SelectDTO
 open System.Text.Json
 
 [<JavaScript>]
 module Client =
     let zoomVar = Var.Create 1.0
+    let selectedCncVar = Var.Create ""
+    let cncFilesVar : Var<CncFileInfo list> = Var.Create []
     type Cmd =
         | Rapid of float*float
         | Line of float*float
@@ -40,6 +43,12 @@ module Client =
     let showFormVar = Var.Create false
     let nameVar = Var.Create ""
     let turningVar = Var.Create ""
+    let loadCncFiles () =
+        async {
+            let! files = Server.GetCncFilesRpc()
+            cncFilesVar.Value <- files
+        }
+        |> Async.StartImmediate
     let saveCanvasAsImage (canvasId: string) =
         let canvas = JS.Document.GetElementById(canvasId) :?> HTMLCanvasElement
         let dataUrl = canvas.ToDataURL("image/png")
@@ -357,17 +366,56 @@ module Client =
         currentPage.View
         |> Doc.BindView (fun p ->
             if p = Home then
-                div [] [ h2 [] [ text "Home" ] ]
+                div [ ] [ h2 [] [ text "Home" ] ]
             else Doc.Empty
         )
     let toggleForm () =
         showFormVar.Value <- not showFormVar.Value
+
+    let dropdownDoc =
+        cncFilesVar.View
+        |> View.Map (fun files ->
+            if files.Length > 0 then
+                div [ attr.``class`` "mb-4" ] [
+
+                    h3 [] [ text "Válassz CNC fájlt" ];
+
+
+                select [
+                    attr.``class`` "p-2 text-black rounded"
+
+                    on.change (fun _ el ->
+                        let target = el.Target :?> HTMLSelectElement
+                        let value = target?Value
+                        selectedCncVar.Value <- value
+                    )
+                ] [
+
+                    yield option [
+                        attr.value ""
+                    ] [
+                        text "-- válassz --"
+                    ]
+
+                    for file in files do
+                        yield option [
+                            attr.value (string file.Id)
+                        ] [
+                            text (file.Name + " - " + file.Turning)
+                        ]
+                ]
+                ]
+            else
+                Doc.Empty
+        )
+        |> Doc.EmbedView
     let analyzerDoc =
         currentPage.View
         |> Doc.BindView (fun p ->
         if p = Analyzer then
             div [] [
                 h2 [] [ text "Analyzer" ]
+                dropdownDoc
                 div [ attr.``class`` "flex flex-col gap-6" ] [
                     canvas [
                         attr.id "compassCanvas"
@@ -518,7 +566,7 @@ module Client =
                 currentPage.Value <- Upload
             )
 
-            // 🔥 EZ A KULCS
+            
             .HomeView(homeDoc)
             .AnalyzerView(analyzerDoc)
             .UploadView(uploadDoc)
@@ -528,3 +576,4 @@ module Client =
             .Doc()
         |> Doc.RunById "main"
         initFileUpload()
+        loadCncFiles()
