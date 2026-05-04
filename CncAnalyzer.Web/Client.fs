@@ -385,10 +385,38 @@ module Client =
                     attr.``class`` "p-2 text-black rounded"
 
                     on.change (fun _ el ->
+                    async {
                         let target = el.Target :?> HTMLSelectElement
-                        let value = target?Value
+                        let value = target?value
+
                         selectedCncVar.Value <- value
-                    )
+
+                        if value <> "" then
+                            let id = int value
+
+                            let! gcodeText = Server.GetCncGCodeByIdRpc id
+
+                            fileContent.Value <- gcodeText
+
+                            let parsed = Parser.parseGCode gcodeText
+                            let dirs = computeDirections parsed
+
+                            directionsVar.Value <- dirs
+
+                            let cmds =
+                                parsed
+                                |> Array.choose (fun l ->
+                                    match l.Cmd, l.X, l.Y with
+                                    | "G0", Some x, Some y -> Some (Rapid(x,y))
+                                    | "G1", Some x, Some y -> Some (Line(x,y))
+                                    | "G2", Some x, Some y -> Some (ArcCW(x,y))
+                                    | _ -> None
+                                )
+
+                            gcodeVar.Value <- cmds
+                    }
+                    |> Async.StartImmediate
+                )
                 ] [
 
                     yield option [

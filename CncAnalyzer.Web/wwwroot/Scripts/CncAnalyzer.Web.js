@@ -362,6 +362,13 @@ function circleFrom3Points(p, p_1, p_2, p_3, p_4, p_5){
 function FailWith(msg){
   throw new Error(msg);
 }
+function toInt(x){
+  const u=toUInt(x);
+  return u>2147483647?u-4294967296:u;
+}
+function toUInt(x){
+  return(x<0?Math.ceil(x):Math.floor(x))>>>0;
+}
 function step(min, step_1, max_2){
   const s=Sign(step_1);
   return takeWhile((k) => s*(max_2-k)>=0, initInfinite((k) => min+k*step_1));
@@ -717,10 +724,34 @@ let _c=Lazy((_i) => class $StartupCode_Client {
       });
     }), null))], [Doc.TextNode("Mentés")])]):Doc.Empty, currentPage().View);
     this.homeDoc=Doc.BindView((p) => p.$===0?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Home")])]):Doc.Empty, currentPage().View);
-    this.dropdownDoc=Doc.EmbedView(Map((files) => files.Length>0?Doc.Element("div", [Attr.Create("class", "mb-4")], [Doc.Element("h3", [], [Doc.TextNode("Válassz CNC fájlt")]), Doc.Element("select", [Attr.Create("class", "p-2 text-black rounded"), Attr.HandlerImpl("change", () =>(el) => {
-      const value=el.target.Value;
-      return selectedCncVar().Set(value);
-    })], ofSeq_1(delay(() => append([Doc.Element("option", [Attr.Create("value", "")], [Doc.TextNode("-- válassz --")])], delay(() => map_1((file) => Doc.Element("option", [Attr.Create("value", String(file.Id))], [Doc.TextNode(file.Name+" - "+file.Turning)]), files))))))]):Doc.Empty, cncFilesVar().View));
+    this.dropdownDoc=Doc.EmbedView(Map((files) => files.Length>0?Doc.Element("div", [Attr.Create("class", "mb-4")], [Doc.Element("h3", [], [Doc.TextNode("Válassz CNC fájlt")]), Doc.Element("select", [Attr.Create("class", "p-2 text-black rounded"), Attr.HandlerImpl("change", () =>(el) => StartImmediate(Delay(() => {
+      const value=el.target.value;
+      selectedCncVar().Set(value);
+      return value!=""?Bind_1(GetCncGCodeByIdRpc(toInt(Number(value))), (a) => {
+        fileContent().Set(a);
+        const parsed=parseGCode(a);
+        const dirs=computeDirections(parsed);
+        directionsVar().Set(dirs);
+        const cmds=choose((l) => {
+          let _1;
+          const _2=l.Cmd;
+          const _3=l.X;
+          const _4=l.Y;
+          switch(_2=="G0"?_3!=null&&_3.$==1?_4!=null&&_4.$==1?(_1=[_3.$0, _4.$0],0):3:3:_2=="G1"?_3!=null&&_3.$==1?_4!=null&&_4.$==1?(_1=[_3.$0, _4.$0],1):3:3:_2=="G2"?_3!=null&&_3.$==1?_4!=null&&_4.$==1?(_1=[_3.$0, _4.$0],2):3:3:3){
+            case 0:
+              return Some(Rapid(_1[0], _1[1]));
+            case 1:
+              return Some(Line(_1[0], _1[1]));
+            case 2:
+              return Some(ArcCW(_1[0], _1[1]));
+            case 3:
+              return null;
+          }
+        }, parsed);
+        gcodeVar().Set(cmds);
+        return Zero();
+      }):Zero();
+    }), null))], ofSeq_1(delay(() => append([Doc.Element("option", [Attr.Create("value", "")], [Doc.TextNode("-- válassz --")])], delay(() => map_1((file) => Doc.Element("option", [Attr.Create("value", String(file.Id))], [Doc.TextNode(file.Name+" - "+file.Turning)]), files))))))]):Doc.Empty, cncFilesVar().View));
     this.analyzerDoc=Doc.BindView((p) => p.$===1?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Analyzer")]), dropdownDoc(), Doc.Element("div", [Attr.Create("class", "flex flex-col gap-6")], [Doc.Element("canvas", [Attr.Create("id", "compassCanvas"), Attr.Create("width", "600"), Attr.Create("height", "600"), Attr.A4((el) => {
       el.addEventListener("wheel", (ev) => {
         ev.preventDefault();
@@ -1628,6 +1659,9 @@ function GetCncFilesRpc(){
 }
 function SaveCncRpc(name, turning, gcode){
   return(new AjaxRemotingProvider()).Async("Server/SaveCncRpc", [name, turning, gcode]);
+}
+function GetCncGCodeByIdRpc(id){
+  return Bind_1((new AjaxRemotingProvider()).Async("Server/GetCncGCodeByIdRpc", [id]), (o) => Return(o));
 }
 class Dictionary extends Object_1 {
   equals;

@@ -159,3 +159,26 @@ module Server =
 
             return List.ofSeq results
         }
+
+    [<Rpc>]
+    let GetCncGCodeByIdRpc (id:int) : Async<string> =
+        async {
+            use conn = new SqliteConnection(connectionString)
+            conn.Open()
+
+            use cmd = conn.CreateCommand()
+            cmd.CommandText <- """
+                SELECT gcode
+                FROM cnc_files
+                WHERE id = @id
+            """
+
+            cmd.Parameters.AddWithValue("@id", id) |> ignore
+
+            use reader = cmd.ExecuteReader()
+
+            if reader.Read() then
+                return reader.GetString(0)
+            else
+                return ""
+        }
