@@ -116,6 +116,18 @@ module Server =
             })
 
         List.ofSeq results
+    let deleteCnc id =
+        use conn = new SqliteConnection(connectionString)
+        conn.Open()
+
+        use cmd = conn.CreateCommand()
+        cmd.CommandText <- """
+            DELETE FROM cnc_files
+            WHERE id = @id
+        """
+
+        cmd.Parameters.AddWithValue("@id", id) |> ignore
+        cmd.ExecuteNonQuery() |> ignore
 
     [<Rpc>]
     let SaveCncRpc

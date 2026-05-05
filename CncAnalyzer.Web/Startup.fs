@@ -37,6 +37,12 @@ let main args =
     ))
     |> ignore
 
+    app.MapDelete("/api/cnc/{id}", Func<int,string>(fun id ->
+            Server.deleteCnc id
+            "Deleted"
+    ))
+    |> ignore
+
     app.UseHttpsRedirection()
 //#if DEBUG        
 //        .UseWebSharperScriptRedirect(startVite = false)
