@@ -353,6 +353,10 @@ module Client =
                                 
                                 do! SaveCncRpc name turning fileContent.Value
 
+                                // dropdown refresh
+                                let! updatedFiles = GetCncFilesRpc()
+                                cncFilesVar.Value <- updatedFiles
+
                                 JS.Global?console?log("SAVE:", name, turning, fileContent.Value)
                                 JS.Global?console?log("MENTVE!")
                             } |> Async.StartImmediate
@@ -562,6 +566,8 @@ module Client =
                         )
 
                     gcodeVar.Value <- cmds
+
+                    
 
                     JS.Global?console?log(dirs)
 

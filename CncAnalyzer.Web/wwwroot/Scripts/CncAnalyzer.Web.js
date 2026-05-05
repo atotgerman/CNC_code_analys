@@ -717,11 +717,12 @@ let _c=Lazy((_i) => class $StartupCode_Client {
     this.saveDoc=Doc.BindView((p) => p.$===3?Doc.Element("div", [Attr.Create("class", "p-6 flex flex-col gap-4")], [Doc.Element("h2", [], [Doc.TextNode("Mentés adatbázisba")]), Doc.Input([Attr.Create("placeholder", "Név"), Attr.Create("class", "p-2 text-black")], nameVar()), Doc.Input([Attr.Create("placeholder", "Forgácsolás"), Attr.Create("class", "p-2 text-black")], turningVar()), Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-green-600 rounded"), Attr.HandlerImpl("click", () =>() => StartImmediate(Delay(() => {
       const name=nameVar().Get();
       const turning=turningVar().Get();
-      return Bind_1(SaveCncRpc(name, turning, fileContent().Get()), () => {
+      return Bind_1(SaveCncRpc(name, turning, fileContent().Get()), () => Bind_1(GetCncFilesRpc(), (a) => {
+        cncFilesVar().Set(a);
         globalThis.console.log(["SAVE:", name, turning, fileContent().Get()]);
         globalThis.console.log("MENTVE!");
         return Zero();
-      });
+      }));
     }), null))], [Doc.TextNode("Mentés")])]):Doc.Empty, currentPage().View);
     this.homeDoc=Doc.BindView((p) => p.$===0?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Home")])]):Doc.Empty, currentPage().View);
     this.dropdownDoc=Doc.EmbedView(Map((files) => files.Length>0?Doc.Element("div", [Attr.Create("class", "mb-4")], [Doc.Element("h3", [], [Doc.TextNode("Válassz CNC fájlt")]), Doc.Element("select", [Attr.Create("class", "p-2 text-black rounded"), Attr.HandlerImpl("change", () =>(el) => StartImmediate(Delay(() => {
