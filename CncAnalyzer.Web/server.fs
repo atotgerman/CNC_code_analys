@@ -194,3 +194,23 @@ module Server =
             else
                 return ""
         }
+
+    let updateCnc id name turning gcode =
+            use conn = new SqliteConnection(connectionString)
+            conn.Open()
+
+            use cmd = conn.CreateCommand()
+            cmd.CommandText <- """
+                UPDATE cnc_files
+                SET name = @name,
+                    turning = @turning,
+                    gcode = @gcode
+                WHERE id = @id
+            """
+
+            cmd.Parameters.AddWithValue("@id", id) |> ignore
+            cmd.Parameters.AddWithValue("@name", name) |> ignore
+            cmd.Parameters.AddWithValue("@turning", turning) |> ignore
+            cmd.Parameters.AddWithValue("@gcode", gcode) |> ignore
+
+            cmd.ExecuteNonQuery() |> ignore

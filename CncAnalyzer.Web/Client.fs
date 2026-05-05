@@ -40,6 +40,16 @@ module Client =
         X: float
         Y: float
     }
+
+    type CncStats = {
+        TotalPath: float
+        RapidMoves: int
+        LinearMoves: int
+        ArcMoves: int
+        EstimatedTime: float
+    }
+
+    let statsVar : Var<Option<CncStats>> = Var.Create None
     let showFormVar = Var.Create false
     let nameVar = Var.Create ""
     let turningVar = Var.Create ""
@@ -307,6 +317,64 @@ module Client =
                     loop (i+1)
 
         loop 0
+
+    let calculateStats (cmds: Cmd[]) =
+        let mutable totalPath = 0.0
+        let mutable rapidCount = 0
+        let mutable lineCount = 0
+        let mutable arcCount = 0
+
+        let mutable prev = (0.0, 0.0)
+
+        for cmd in cmds do
+            match cmd with
+
+            | Rapid(x,y) ->
+                rapidCount <- rapidCount + 1
+
+                let dx = x - fst prev
+                let dy = y - snd prev
+
+                totalPath <- totalPath + sqrt(dx*dx + dy*dy)
+
+                prev <- (x,y)
+
+            | Line(x,y) ->
+                lineCount <- lineCount + 1
+
+                let dx = x - fst prev
+                let dy = y - snd prev
+
+                totalPath <- totalPath + sqrt(dx*dx + dy*dy)
+
+                prev <- (x,y)
+
+            | ArcCW(x,y) ->
+                arcCount <- arcCount + 1
+
+                let dx = x - fst prev
+                let dy = y - snd prev
+
+                // egyszerűsített ívhossz becslés (jelenleg chord length)
+                totalPath <- totalPath + sqrt(dx*dx + dy*dy)
+
+                prev <- (x,y)
+
+        // becsült sebességek
+        let rapidSpeed = 5000.0   // mm/min
+        let cutSpeed = 1500.0     // mm/min
+
+        let estimatedTime =
+            totalPath / cutSpeed
+
+        {
+            TotalPath = totalPath
+            RapidMoves = rapidCount
+            LinearMoves = lineCount
+            ArcMoves = arcCount
+            EstimatedTime = estimatedTime
+        }
+
     let computeDirections (lines: Parser.GCodeLine[]) =
         lines
         |> Array.pairwise
@@ -418,6 +486,10 @@ module Client =
                                 )
 
                             gcodeVar.Value <- cmds
+
+                            let stats = calculateStats cmds
+                            statsVar.Value <- Some stats
+
                     }
                     |> Async.StartImmediate
                 )
@@ -443,8 +515,8 @@ module Client =
         |> Doc.EmbedView
     let analyzerDoc =
         currentPage.View
-        |> Doc.BindView (fun p ->
-        if p = Analyzer then
+        |> Doc.BindView (fun page ->
+        if page = Analyzer then
             div [] [
                 h2 [] [ text "Analyzer" ]
                 dropdownDoc
@@ -492,6 +564,40 @@ module Client =
                         )
                     ] []
 
+                    statsVar.View
+                        |> View.Map (function
+                            | Some stats ->
+                                div [ attr.``class`` "grid grid-cols-2 gap-4 mb-6" ] [
+
+                                    div [ attr.``class`` "bg-slate-700 p-4 rounded" ] [
+                                        h5 [] [ text "Total Path" ]
+                                        p [] [ text (sprintf "%.2f mm" stats.TotalPath) ]
+                                    ]
+
+                                    div [ attr.``class`` "bg-slate-700 p-4 rounded" ] [
+                                        h5 [] [ text "Rapid Moves" ]
+                                        p [] [ text (string stats.RapidMoves) ]
+                                    ]
+
+                                    div [ attr.``class`` "bg-slate-700 p-4 rounded" ] [
+                                        h5 [] [ text "Linear Moves" ]
+                                        p [] [ text (string stats.LinearMoves) ]
+                                    ]
+
+                                    div [ attr.``class`` "bg-slate-700 p-4 rounded" ] [
+                                        h5 [] [ text "Arc Moves" ]
+                                        p [] [ text (string stats.ArcMoves) ]
+                                    ]
+
+                                    div [ attr.``class`` "bg-slate-700 p-4 rounded col-span-2" ] [
+                                        h5 [] [ text "Estimated Machining Time" ]
+                                        p [] [ text (sprintf "%.2f min" stats.EstimatedTime) ]
+                                    ]
+                                ]
+
+                            | None -> Doc.Empty
+                        )
+                        |> Doc.EmbedView
 
                     div [ attr.``class`` "flex gap-4 pt-4" ] [
 
@@ -506,6 +612,7 @@ module Client =
                             else Doc.Empty
                         )
                         |> Doc.EmbedView
+
 
                         // Compass mentés
                         directionsVar.View

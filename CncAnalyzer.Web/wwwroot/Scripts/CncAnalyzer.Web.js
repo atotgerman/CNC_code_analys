@@ -109,7 +109,7 @@ function computeDirections(lines){
     if(_3!=null&&_3.$==1&&(_4!=null&&_4.$==1&&(_5!=null&&_5.$==1&&(_6!=null&&_6.$==1&&(_2=[_3.$0, _5.$0, _4.$0, _6.$0],true))))){
       const dx=_2[1]-_2[0];
       const dy=_2[3]-_2[2];
-      return Some(New_1(Math.atan2(dy, dx), Math.sqrt(dx*dx+dy*dy)));
+      return Some(New_2(Math.atan2(dy, dx), Math.sqrt(dx*dx+dy*dy)));
     }
     else return null;
   }, pairwise(lines));
@@ -131,6 +131,47 @@ function turningVar(){
 }
 function selectedCncVar(){
   return _c.selectedCncVar;
+}
+function statsVar(){
+  return _c.statsVar;
+}
+function calculateStats(cmds){
+  let totalPath=0;
+  let rapidCount=0;
+  let lineCount=0;
+  let arcCount=0;
+  let prev=[0, 0];
+  for(let i=0, _1=cmds.length-1;i<=_1;i++){
+    const cmd=get(cmds, i);
+    if(cmd.$==1){
+      const y=cmd.$1;
+      const x=cmd.$0;
+      lineCount=lineCount+1;
+      const dx=x-prev[0];
+      const dy=y-prev[1];
+      totalPath=totalPath+Math.sqrt(dx*dx+dy*dy);
+      prev=[x, y];
+    }
+    else if(cmd.$==2){
+      const y_1=cmd.$1;
+      const x_1=cmd.$0;
+      arcCount=arcCount+1;
+      const dx_1=x_1-prev[0];
+      const dy_1=y_1-prev[1];
+      totalPath=totalPath+Math.sqrt(dx_1*dx_1+dy_1*dy_1);
+      prev=[x_1, y_1];
+    }
+    else {
+      const y_2=cmd.$1;
+      const x_2=cmd.$0;
+      rapidCount=rapidCount+1;
+      const dx_2=x_2-prev[0];
+      const dy_2=y_2-prev[1];
+      totalPath=totalPath+Math.sqrt(dx_2*dx_2+dy_2*dy_2);
+      prev=[x_2, y_2];
+    }
+  }
+  return New_1(totalPath, rapidCount, lineCount, arcCount, totalPath/1500);
 }
 function dropdownDoc(){
   return _c.dropdownDoc;
@@ -409,12 +450,12 @@ class TemplateInstance extends Object_1 {
     this.anchorRoot=null;
   }
 }
-function length(arr){
-  return arr.dims===2?arr.length*arr.length:arr.length;
-}
 function get(arr, n){
   checkBounds(arr, n);
   return arr[n];
+}
+function length(arr){
+  return arr.dims===2?arr.length*arr.length:arr.length;
 }
 function checkBounds(arr, n){
   if(n<0||n>=arr.length)FailWith("Index was outside the bounds of the array.");
@@ -697,6 +738,7 @@ let _c=Lazy((_i) => class $StartupCode_Client {
   static turningVar;
   static nameVar;
   static showFormVar;
+  static statsVar;
   static fileContent;
   static gcodeVar;
   static cncFilesVar;
@@ -708,6 +750,7 @@ let _c=Lazy((_i) => class $StartupCode_Client {
     this.cncFilesVar=_c_1.Create_1(FSharpList.Empty);
     this.gcodeVar=_c_1.Create_1([]);
     this.fileContent=_c_1.Create_1("");
+    this.statsVar=_c_1.Create_1(null);
     this.showFormVar=_c_1.Create_1(false);
     this.nameVar=_c_1.Create_1("");
     this.turningVar=_c_1.Create_1("");
@@ -750,10 +793,12 @@ let _c=Lazy((_i) => class $StartupCode_Client {
           }
         }, parsed);
         gcodeVar().Set(cmds);
+        const stats=calculateStats(cmds);
+        statsVar().Set(Some(stats));
         return Zero();
       }):Zero();
     }), null))], ofSeq_1(delay(() => append([Doc.Element("option", [Attr.Create("value", "")], [Doc.TextNode("-- válassz --")])], delay(() => map_1((file) => Doc.Element("option", [Attr.Create("value", String(file.Id))], [Doc.TextNode(file.Name+" - "+file.Turning)]), files))))))]):Doc.Empty, cncFilesVar().View));
-    this.analyzerDoc=Doc.BindView((p) => p.$===1?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Analyzer")]), dropdownDoc(), Doc.Element("div", [Attr.Create("class", "flex flex-col gap-6")], [Doc.Element("canvas", [Attr.Create("id", "compassCanvas"), Attr.Create("width", "600"), Attr.Create("height", "600"), Attr.A4((el) => {
+    this.analyzerDoc=Doc.BindView((page) => page.$===1?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Analyzer")]), dropdownDoc(), Doc.Element("div", [Attr.Create("class", "flex flex-col gap-6")], [Doc.Element("canvas", [Attr.Create("id", "compassCanvas"), Attr.Create("width", "600"), Attr.Create("height", "600"), Attr.A4((el) => {
       el.addEventListener("wheel", (ev) => {
         ev.preventDefault();
         const factor=ev.deltaY<0?1.1:0.9;
@@ -766,7 +811,13 @@ let _c=Lazy((_i) => class $StartupCode_Client {
       Sink((cmds) => {
         if(length(cmds)>0)drawGCodeReal(el, cmds);
       }, Map2((_1) => _1, gcodeVar().View, zoomVar().View));
-    })], []), Doc.Element("div", [Attr.Create("class", "flex gap-4 pt-4")], [Doc.EmbedView(Map((cmds) => length(cmds)>0?Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-green-600 hover:bg-green-500 rounded"), Attr.HandlerImpl("click", () => saveCanvasAsImage("pathCanvas"))], [Doc.TextNode("Save Path as PNG")]):Doc.Empty, gcodeVar().View)), Doc.EmbedView(Map((dirs) => length(dirs)>0?Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded"), Attr.HandlerImpl("click", () => saveCanvasAsImage("compassCanvas"))], [Doc.TextNode("Save Compass as PNG")]):Doc.Empty, directionsVar().View)), Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded"), Attr.HandlerImpl("click", () =>() => toggleForm())], [Doc.TextView(Map((v) => v?"Bezár":"Mentés adatbázisba", showFormVar().View))])])])]):Doc.Empty, currentPage().View);
+    })], []), Doc.EmbedView(Map((a) => {
+      if(a==null)return Doc.Empty;
+      else {
+        const stats=a.$0;
+        return Doc.Element("div", [Attr.Create("class", "grid grid-cols-2 gap-4 mb-6")], [Doc.Element("div", [Attr.Create("class", "bg-slate-700 p-4 rounded")], [Doc.Element("h5", [], [Doc.TextNode("Total Path")]), Doc.Element("p", [], [Doc.TextNode((((_1) =>(_2) => _1(_2.toFixed(2)+" mm"))((x) => x))(stats.TotalPath))])]), Doc.Element("div", [Attr.Create("class", "bg-slate-700 p-4 rounded")], [Doc.Element("h5", [], [Doc.TextNode("Rapid Moves")]), Doc.Element("p", [], [Doc.TextNode(String(stats.RapidMoves))])]), Doc.Element("div", [Attr.Create("class", "bg-slate-700 p-4 rounded")], [Doc.Element("h5", [], [Doc.TextNode("Linear Moves")]), Doc.Element("p", [], [Doc.TextNode(String(stats.LinearMoves))])]), Doc.Element("div", [Attr.Create("class", "bg-slate-700 p-4 rounded")], [Doc.Element("h5", [], [Doc.TextNode("Arc Moves")]), Doc.Element("p", [], [Doc.TextNode(String(stats.ArcMoves))])]), Doc.Element("div", [Attr.Create("class", "bg-slate-700 p-4 rounded col-span-2")], [Doc.Element("h5", [], [Doc.TextNode("Estimated Machining Time")]), Doc.Element("p", [], [Doc.TextNode((((_1) =>(_2) => _1(_2.toFixed(2)+" min"))((x) => x))(stats.EstimatedTime))])])]);
+      }
+    }, statsVar().View)), Doc.Element("div", [Attr.Create("class", "flex gap-4 pt-4")], [Doc.EmbedView(Map((cmds) => length(cmds)>0?Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-green-600 hover:bg-green-500 rounded"), Attr.HandlerImpl("click", () => saveCanvasAsImage("pathCanvas"))], [Doc.TextNode("Save Path as PNG")]):Doc.Empty, gcodeVar().View)), Doc.EmbedView(Map((dirs) => length(dirs)>0?Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded"), Attr.HandlerImpl("click", () => saveCanvasAsImage("compassCanvas"))], [Doc.TextNode("Save Compass as PNG")]):Doc.Empty, directionsVar().View)), Doc.Element("button", [Attr.Create("class", "px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded"), Attr.HandlerImpl("click", () =>() => toggleForm())], [Doc.TextView(Map((v) => v?"Bezár":"Mentés adatbázisba", showFormVar().View))])])])]):Doc.Empty, currentPage().View);
     this.uploadDoc=Doc.BindView((p) => p.$===2?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Upload CNC file")])]):Doc.Empty, currentPage().View);
   }
 });
@@ -1793,7 +1844,16 @@ class FSharpList {
   $0;
   $1;
 }
-function New_1(Angle, Length){
+function New_1(TotalPath, RapidMoves, LinearMoves, ArcMoves, EstimatedTime){
+  return{
+    TotalPath:TotalPath, 
+    RapidMoves:RapidMoves, 
+    LinearMoves:LinearMoves, 
+    ArcMoves:ArcMoves, 
+    EstimatedTime:EstimatedTime
+  };
+}
+function New_2(Angle, Length){
   return{Angle:Angle, Length:Length};
 }
 let _c_1=Lazy((_i) => class Var_1 extends Object_1 {
@@ -2367,7 +2427,7 @@ function Delay(mk){
 }
 function Bind_1(r, f){
   return checkCancel((c) => {
-    r(New_2((a) => {
+    r(New_3((a) => {
       if(a.$==0){
         const x=a.$0;
         scheduler().Fork(() => {
@@ -2391,7 +2451,7 @@ function Zero(){
 function StartImmediate(c, ctOpt){
   const d=(defCTS())[0];
   const ct=ctOpt==null?d:ctOpt.$0;
-  if(!ct.c)c(New_2((a) => {
+  if(!ct.c)c(New_3((a) => {
     if(a.$==1)UncaughtAsyncError(a.$0);
   }, ct));
 }
@@ -2422,7 +2482,7 @@ function Start(c, ctOpt){
   const d=(defCTS())[0];
   const ct=ctOpt==null?d:ctOpt.$0;
   scheduler().Fork(() => {
-    if(!ct.c)c(New_2((a) => {
+    if(!ct.c)c(New_3((a) => {
       if(a.$==1)UncaughtAsyncError(a.$0);
     }, ct));
   });
@@ -3026,7 +3086,7 @@ function InsertDoc(parent, doc, pos){
     }
 }
 function CreateRunState(parent, doc){
-  return New_5(get_Empty_1(), CreateElemNode(parent, EmptyAttr(), doc));
+  return New_6(get_Empty_1(), CreateElemNode(parent, EmptyAttr(), doc));
 }
 function PerformAnimatedUpdate(childrenOnly, st, doc){
   return get_UseAnimations()?Delay(() => {
@@ -3253,7 +3313,7 @@ function arrContains(item, arr){
     else i=i+1;
   return!c;
 }
-function New_2(k, ct){
+function New_3(k, ct){
   return{k:k, ct:ct};
 }
 function No(Item){
@@ -3275,7 +3335,7 @@ let _c_4=Lazy((_i) => class $StartupCode_Concurrency {
   static scheduler;
   static noneCT;
   static {
-    this.noneCT=New_3(false, []);
+    this.noneCT=New_4(false, []);
     this.scheduler=new Scheduler();
     this.defCTS=[new CancellationTokenSource()];
     this.Zero=Return();
@@ -3284,7 +3344,7 @@ let _c_4=Lazy((_i) => class $StartupCode_Concurrency {
     };
   }
 });
-function New_3(IsCancellationRequested, Registrations){
+function New_4(IsCancellationRequested, Registrations){
   return{c:IsCancellationRequested, r:Registrations};
 }
 class DocElemNode {
@@ -3359,7 +3419,7 @@ function Insert(elem, tree){
   }
   loop(tree);
   const arr=nodes.slice(0);
-  let _1=New_4(elem, Flags(tree), arr, oar.length===0?null:Some((el) => {
+  let _1=New_5(elem, Flags(tree), arr, oar.length===0?null:Some((el) => {
     iter_1((f) => {
       f(el);
     }, oar);
@@ -3370,7 +3430,7 @@ function Updates(dyn){
   return MapTreeReduce((x) => x.NChanged, Const(), Map2Unit, dyn.DynNodes);
 }
 function Empty(e){
-  return New_4(e, 0, [], null);
+  return New_5(e, 0, [], null);
 }
 function Flags(a){
   return a!==null&&a.hasOwnProperty("flags")?a.flags:0;
@@ -3847,7 +3907,7 @@ class CancellationTokenSource extends Object_1 {
     this.init=1;
   }
 }
-function New_4(DynElem, DynFlags, DynNodes, OnAfterRender_1){
+function New_5(DynElem, DynFlags, DynNodes, OnAfterRender_1){
   const _1={
     DynElem:DynElem, 
     DynFlags:DynFlags, 
@@ -4160,7 +4220,7 @@ class ValueCollection extends Object_1 {
     this.d=d;
   }
 }
-function New_5(PreviousNodes, Top){
+function New_6(PreviousNodes, Top){
   return{PreviousNodes:PreviousNodes, Top:Top};
 }
 function get_Empty_1(){
@@ -4760,7 +4820,7 @@ function DomNodes(Item){
   return{$:0, $0:Item};
 }
 function Create(f){
-  return New_6(false, f, forceLazy);
+  return New_7(false, f, forceLazy);
 }
 function forceLazy(){
   const v=this.v();
@@ -4781,7 +4841,7 @@ let _c_11=Lazy((_i) => class $StartupCode_AppendList {
     this.Empty={$:0};
   }
 });
-function New_6(created, evalOrVal, force){
+function New_7(created, evalOrVal, force){
   return{
     c:created, 
     v:evalOrVal, 

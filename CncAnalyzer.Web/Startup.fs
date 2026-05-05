@@ -5,6 +5,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
 open WebSharper.AspNetCore
 open CncAnalyzer.Web
+open CncAnalyzer.Web.CncCreateDto
 
 [<EntryPoint>]
 let main args =
@@ -40,6 +41,26 @@ let main args =
     app.MapDelete("/api/cnc/{id}", Func<int,string>(fun id ->
             Server.deleteCnc id
             "Deleted"
+    ))
+    |> ignore
+
+    app.MapPost("/api/cnc", Func<CncCreateDto, string>(fun dto ->
+    
+        Server.saveCnc dto.Name dto.Turning dto.GCode
+
+        "CNC file created successfully"
+    ))
+    |> ignore
+
+    app.MapPut("/api/cnc/{id}", Func<int, CncCreateDto, string>(fun id dto ->
+
+        Server.updateCnc
+            id
+            dto.Name
+            dto.Turning
+            dto.GCode
+
+        "CNC updated successfully"
     ))
     |> ignore
 
