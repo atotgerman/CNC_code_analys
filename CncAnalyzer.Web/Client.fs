@@ -436,9 +436,22 @@ module Client =
         )
     let homeDoc =
         currentPage.View
-        |> Doc.BindView (fun p ->
-            if p = Home then
-                div [ ] [ h2 [] [ text "Home" ] ]
+        |> Doc.BindView (fun page ->
+            if page = Home then
+                div [ ] [ 
+                h2 [] [ text "HOME"]
+                p [] [
+                text "Néhány szó a mködésről: első körbe az adtbázis tartalmaz néhány előre beállított\n
+                CNC kódot, amely a lenyiló listából lekérhetőek. Ha Fanuc CSN kódod van akkor azt CSV formátumban tudod betölteni\n
+                az 'Upload' menpont segítségével, majd az Analyser menüpont segítségével a geometriát\n
+                és a kompaszdiagram kerül előállításra. Ezek képformátumban menthetőek és\n
+                az adatbázisba is menthetőek, a képek alatti nyomógombok segítségével.\n
+                Az adatbázisba is elmentheted, ekkor egy űrlap jelenik meg, amelynél az elmentési paraméterek jelennek meg\n
+
+                Fontos: a képek nagyíthatóak az egér görgőjével.
+                Jó munkát!
+                
+                " ] ]
             else Doc.Empty
         )
     let toggleForm () =
