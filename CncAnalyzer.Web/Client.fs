@@ -441,6 +441,7 @@ module Client =
                 div [ ] [ 
                 h2 [] [ text "HOME"]
                 p [] [
+                
                 text "Néhány szó a mködésről: első körbe az adtbázis tartalmaz néhány előre beállított\n
                 CNC kódot, amely a lenyiló listából lekérhetőek. Ha Fanuc CSN kódod van akkor azt CSV formátumban tudod betölteni\n
                 az 'Upload' menpont segítségével, majd az Analyser menüpont segítségével a geometriát\n

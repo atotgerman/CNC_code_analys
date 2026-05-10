@@ -767,7 +767,7 @@ let _c=Lazy((_i) => class $StartupCode_Client {
         return Zero();
       }));
     }), null))], [Doc.TextNode("Mentés")])]):Doc.Empty, currentPage().View);
-    this.homeDoc=Doc.BindView((p) => p.$===0?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("Home")])]):Doc.Empty, currentPage().View);
+    this.homeDoc=Doc.BindView((page) => page.$===0?Doc.Element("div", [], [Doc.Element("h2", [], [Doc.TextNode("HOME")]), Doc.Element("p", [], [Doc.TextNode("Néhány szó a mködésr\u0151l: els\u0151 körbe az adtbázis tartalmaz néhány el\u0151re beállított\n\r\n                CNC kódot, amely a lenyiló listából lekérhet\u0151ek. Ha Fanuc CSN kódod van akkor azt CSV formátumban tudod betölteni\n\r\n                az 'Upload' menpont segítségével, majd az Analyser menüpont segítségével a geometriát\n\r\n                és a kompaszdiagram kerül el\u0151állításra. Ezek képformátumban menthet\u0151ek és\n\r\n                az adatbázisba is menthet\u0151ek, a képek alatti nyomógombok segítségével.\n\r\n                Az adatbázisba is elmentheted, ekkor egy \u0171rlap jelenik meg, amelynél az elmentési paraméterek jelennek meg\n\r\n\r\n                Fontos: a képek nagyíthatóak az egér görg\u0151jével.\r\n                Jó munkát!\r\n                \r\n                ")])]):Doc.Empty, currentPage().View);
     this.dropdownDoc=Doc.EmbedView(Map((files) => files.Length>0?Doc.Element("div", [Attr.Create("class", "mb-4")], [Doc.Element("h3", [], [Doc.TextNode("Válassz CNC fájlt")]), Doc.Element("select", [Attr.Create("class", "p-2 text-black rounded"), Attr.HandlerImpl("change", () =>(el) => StartImmediate(Delay(() => {
       const value=el.target.value;
       selectedCncVar().Set(value);
