@@ -1,0 +1,20 @@
+Command,X,Y,Comment
+G0,0.0,0.0,Start position
+G1,10.0,5.0,Linear move
+G1,20.0,10.0,Linear move
+G1,30.0,15.0,Linear move
+G1,40.0,20.0,Linear move
+G1,50.0,25.0,Linear move
+G2,80.0,50.0,Arc CW
+G2,78.978,57.765,Arc CW
+G2,75.981,65.0,Arc CW
+G2,71.213,71.213,Arc CW
+G2,65.0,75.981,Arc CW
+G2,57.765,78.978,Arc CW
+G2,50.0,80.0,Arc CW
+G2,42.235,78.978,Arc CW
+G2,35.0,75.981,Arc CW
+G2,28.787,71.213,Arc CW
+G2,24.019,65.0,Arc CW
+G2,21.022,57.765,Arc CW
+G2,20.0,50.0,Arc CW
